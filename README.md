@@ -8,6 +8,8 @@ The folder ```notebooks``` contains notebooks and scripts in which the final ana
 
 The folder ```external_data``` contains data from external sources that were useful to carry out the project. A specific readme is included to provide the origin of each file.
 
+It should be noted that more complete and up-to-date instructions of the CloneSig python package can be found [here](https://github.com/judithabk6/clonesig). Feel free to get in touch or to open an issue if you have any question or suggestion.
+
 
 #### Installation and dependencies
 this project uses many packages. Here is a list of the most important ones. Requirement files are provided to use with pip (or conda for some specific packages, in particular ```mkl``` and ```PyClone```). Here is a list of the main ones, including some that can be installed with pip (specified). Code was run with R version 3.3.2, and Python 3.6.8 (Anaconda installation), except to run PyClone (Python 2.7.9). All computation was performed under a Centos distribution, with torque as scheduler.
