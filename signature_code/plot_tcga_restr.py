@@ -198,6 +198,8 @@ for i, folder_type in enumerate(['public', 'protected']):
         mut_table = mut_table.assign(vaf=mut_table.var_counts / mut_table.depth)
         mut_table = mut_table.assign(vaf_cn=mut_table.vaf * mut_table['total_cn'] / mut_table['mult'])
         mut_table = mut_table.assign(vaf_purity=mut_table.apply(lambda x: x['vaf']/est.p * ((1 - est.p) * 2 + est.p * x['total_cn']) / x['mult'], axis=1))
+        mut_table = mut_table.assign(trinucleotide=pd.Categorical(mut_table.trinucleotide, ordered=True, categories=range(96)))
+
         nb_bins = min(_freedman_diaconis_bins(mut_table.vaf_purity) * 2, 50)
         final_bins = np.linspace(min(mut_table.vaf_purity), max(mut_table.vaf_purity), nb_bins)
         # fig, ax = plt.subplots(1, figsize=(8, 28), sharex=False, gridspec_kw={'hspace': 0.08, 'wspace': 0, 'height_ratios': [1, 6, 1]})
@@ -274,12 +276,12 @@ for i, folder_type in enumerate(['public', 'protected']):
 
         clone_cols = sns.husl_palette(mut_table.clone.nunique(), l=0.8, s=0.7)
         fig = plt.figure(figsize=(23, 10), dpi= 80)
-        grid = plt.GridSpec(4, 6, hspace=0.1, wspace=0.1)
+        grid = plt.GridSpec(4, 8, hspace=0.1, wspace=0.1)
 
         # Define the axes
         ax_main = fig.add_subplot(grid[:-1, :-1])
         ax_right = fig.add_subplot(grid[:-1, -1], xticklabels=[], yticklabels=[])
-
+        ax_bottom = fig.add_subplot(grid[-1, 0:-1], xticklabels=[], yticklabels=[])
         # Scatterplot on main ax
         sns.scatterplot(y='vaf_purity', x='trinucleotide', data=mut_table[mut_table.vaf_purity<1.5],
                         hue='signature', palette=cols,
@@ -326,15 +328,24 @@ for i, folder_type in enumerate(['public', 'protected']):
 
         #ax_right.invert_yaxis()
         ax_right.set_ylim([1.5, 0])
-
+        sns.countplot(x="trinucleotide", data=mut_table, ax=ax_bottom, color='gray')
+        ax_bottom.invert_yaxis()
+        ax_bottom.set_xlim([-1, 96])
+        ax_bottom.set_xticks(range(96))
+        ax_bottom.get_xaxis().set_tick_params(direction='out', pad=25, rotation=90)
+        _=ax_bottom.set_xticklabels(['{}{}{}'.format(c[0], c[2], c[-1]) for c in PAT_LIST], fontsize=10, color='gray', ha='center', va='bottom')
+        _=ax_main.set_xticklabels([])
+        _=ax_main.set_xticks([])
+        ax_main.set_ylabel('Cancer Cell Fraction', fontsize=23)
+        ax_bottom.set_xlabel('Trinucleotide context', fontsize=23)
 
 
         ax_main.set_xlim([-1, 96])
         ax_main.set_xticks(range(96))
         ax_main.get_xaxis().set_tick_params(direction='out', pad=25, rotation=90)
-        _=ax_main.set_xticklabels(['{}{}{}'.format(c[0], c[2], c[-1]) for c in PAT_LIST], fontsize=10, color='gray', ha='center', va='bottom')
+        _=ax_main.set_xticklabels(['' for c in PAT_LIST], fontsize=10, color='gray', ha='center', va='bottom')
         ax_main.set_ylabel('Cancer Cell Fraction', fontsize=23)
-        ax_main.set_xlabel('Trinucleotide context', fontsize=23)
+        ax_main.set_xlabel('', fontsize=23)
         ax_main.tick_params(axis="y", labelsize=15)
         axes2 = ax_main.twiny()   # mirror them
         axes2.set_xlim([-1, 96])
@@ -342,13 +353,15 @@ for i, folder_type in enumerate(['public', 'protected']):
         axes2.get_xaxis().set_tick_params(length=0, pad=10)
         _ = axes2.set_xticklabels(['C>A', 'C>G', 'C>T', 'T>A', 'T>C', 'T>G'], fontsize=18, color='gray', ha='left', rotation=0, va='center')
 
+        _=ax_main.set_xticks([])
         _=ax_right.set_xticks([])
         _=ax_right.set_yticks([])
-
+        _=ax_bottom.set_yticks([])
 
         axes3 = ax_right.twiny()   # mirror them
         axes3.set_xlabel('Density', fontsize=23)
         ax_right.set_ylabel('', fontsize=23)
+        ax_bottom.set_ylabel('Mutation\nCount', fontsize=23)
         _=axes3.set_xticks([])
 
         plt.savefig('20190828_tcga_plots/{}_{}_clonesig_global.pdf'.format(patient_id, folder_type), bbox_inches='tight')
