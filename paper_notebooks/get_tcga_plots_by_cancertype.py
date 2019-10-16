@@ -109,20 +109,19 @@ def plot_function_TCGA(loc, input_df, n_clusters):
     if 'staging_pt' in input_df.columns:
         row_colors.append(bla_protected_s.staging_pt.map(stage_pt_colordict).fillna('#ababab'))
 
-    row_colors.append(bla_protected_s.clust.map(kmeans_colordict).fillna('#ababab'))
+    #row_colors.append(bla_protected_s.clust.map(kmeans_colordict).fillna('#ababab'))
 
 
     g=sns.clustermap(bla_protected_s[relevant_sigs], cmap="RdBu_r", vmin=-1, vmax=1,
                      yticklabels=False, row_colors=row_colors,
-                    row_cluster=False, col_cluster=False, figsize=(2 * len(relevant_sigs), 2 * len(relevant_sigs)))
-    g.ax_row_dendrogram.set_visible(False)
-    g.ax_col_dendrogram.set_visible(False)
+                    row_cluster=True, col_cluster=False, figsize=(2 * len(relevant_sigs), 2 * len(relevant_sigs)))
+    #g.ax_row_dendrogram.set_visible(False)
     g.ax_col_dendrogram.set_visible(False)
     g.cax.set_position([0.95, .2, .03, .45])
     g.cax.set_ylabel('signature change intensity', position=(0, 0.5), x=10)
     plt.setp(g.ax_heatmap.get_xticklabels(), rotation=70)
     g.ax_heatmap.set_xlabel('signatures')
-    g.ax_heatmap.set_ylabel('patients', labelpad=25*len(relevant_sigs))
+    g.ax_heatmap.set_ylabel('patients', labelpad=40*len(relevant_sigs))
     g.ax_heatmap.yaxis.set_label_position("left")
     g.ax_heatmap.text(-1.5, -1, letters[letter_idx], weight='bold')
     letter_idx = letter_idx + 1
@@ -157,47 +156,47 @@ def plot_function_TCGA(loc, input_df, n_clusters):
             patchList.append(data_key)
         patchList.append(Patch(color='#ababab', label='missing'))
         
-    patchList.append(Patch(color='white', label='Cluster:'))
-    for key in sorted(list(set(bla_protected_s.clust.unique()).intersection(set(kmeans_colordict.keys())))):
-        data_key = Patch(color=kmeans_colordict[key], label=key)
-        patchList.append(data_key)
-    leg_list.append(g.ax_heatmap.legend(handles=patchList, loc=2, bbox_to_anchor=(1.4, 1), fontsize=2.3*len(relevant_sigs)))
+    # patchList.append(Patch(color='white', label='Cluster:'))
+    # for key in sorted(list(set(bla_protected_s.clust.unique()).intersection(set(kmeans_colordict.keys())))):
+    #     data_key = Patch(color=kmeans_colordict[key], label=key)
+    #     patchList.append(data_key)
+    leg_list.append(g.ax_heatmap.legend(handles=patchList, loc=2, bbox_to_anchor=(1.4, 1), fontsize=2.7*len(relevant_sigs)))
     plt.savefig('20190801_paper_figures/{}_heatmap.pdf'.format(loc), bbox_inches='tight')
     
     final_figure_list = list()
     pval_list = list()
     
-    if 'staging_pt' in input_df.columns:
-        pivot_df = bla_protected_s.pivot_table(index='clust', columns='staging_pt', values='SBS1', aggfunc='count').fillna(0)
-        chi2, p, dof, ex = chi2_contingency(pivot_df)
-        pval_list.append(p)
-        pivot_df.div(pivot_df.sum(axis=1), axis=0).plot.bar(stacked=True, colors=[stage_pt_colordict.get(k, '#ababab') for k in sorted(bla_protected_s.staging_pt.unique())], legend=False)
-        plt.gca().text(-0.5, 1.1, letters[letter_idx], weight="bold")
-        letter_idx = letter_idx + 1
-        plt.savefig('20190801_paper_figures/{}_staging_pt.pdf'.format(loc), bbox_inches='tight')
-        final_figure_list.append('staging_pt')
+    # if 'staging_pt' in input_df.columns:
+    #     pivot_df = bla_protected_s.pivot_table(index='clust', columns='staging_pt', values='SBS1', aggfunc='count').fillna(0)
+    #     chi2, p, dof, ex = chi2_contingency(pivot_df)
+    #     pval_list.append(p)
+    #     pivot_df.div(pivot_df.sum(axis=1), axis=0).plot.bar(stacked=True, colors=[stage_pt_colordict.get(k, '#ababab') for k in sorted(bla_protected_s.staging_pt.unique())], legend=False)
+    #     plt.gca().text(-0.5, 1.1, letters[letter_idx], weight="bold")
+    #     letter_idx = letter_idx + 1
+    #     plt.savefig('20190801_paper_figures/{}_staging_pt.pdf'.format(loc), bbox_inches='tight')
+    #     final_figure_list.append('staging_pt')
 
 
-    if 'staging_global' in input_df.columns:
-        pivot_df = bla_protected_s.pivot_table(index='clust', columns='staging_global', values='SBS1', aggfunc='count').fillna(0)
-        chi2, p, dof, ex = chi2_contingency(pivot_df)
-        pval_list.append(p)
-        pivot_df.div(pivot_df.sum(axis=1), axis=0).plot.bar(stacked=True, colors=[stage_global_colordict.get(k, '#ababab') for k in sorted(bla_protected_s.staging_global.unique())], legend=False)
-        plt.gca().text(-0.5, 1.1, letters[letter_idx], weight="bold")
-        letter_idx = letter_idx + 1
-        plt.savefig('20190801_paper_figures/{}_staging_global.pdf'.format(loc), bbox_inches='tight')
-        final_figure_list.append('staging_global')
+    # if 'staging_global' in input_df.columns:
+    #     pivot_df = bla_protected_s.pivot_table(index='clust', columns='staging_global', values='SBS1', aggfunc='count').fillna(0)
+    #     chi2, p, dof, ex = chi2_contingency(pivot_df)
+    #     pval_list.append(p)
+    #     pivot_df.div(pivot_df.sum(axis=1), axis=0).plot.bar(stacked=True, colors=[stage_global_colordict.get(k, '#ababab') for k in sorted(bla_protected_s.staging_global.unique())], legend=False)
+    #     plt.gca().text(-0.5, 1.1, letters[letter_idx], weight="bold")
+    #     letter_idx = letter_idx + 1
+    #     plt.savefig('20190801_paper_figures/{}_staging_global.pdf'.format(loc), bbox_inches='tight')
+    #     final_figure_list.append('staging_global')
 
 
-    if 'age_group' in input_df.columns:
-        pivot_df = bla_protected_s.pivot_table(index='clust', columns='age_group', values='SBS1', aggfunc='count').fillna(0)
-        chi2, p, dof, ex = chi2_contingency(pivot_df)
-        pval_list.append(p)
-        pivot_df.div(pivot_df.sum(axis=1), axis=0).plot.bar(stacked=True, colors=[age_colordict.get(k, '#ffffff') for k in sorted(bla_protected_s.age_group.unique(), key=lambda d: age_order[d])], legend=False)
-        plt.gca().text(-0.5, 1.1, letters[letter_idx],weight="bold")
-        letter_idx = letter_idx + 1
-        plt.savefig('20190801_paper_figures/{}_age.pdf'.format(loc), bbox_inches='tight')
-        final_figure_list.append('age')
+    # if 'age_group' in input_df.columns:
+    #     pivot_df = bla_protected_s.pivot_table(index='clust', columns='age_group', values='SBS1', aggfunc='count').fillna(0)
+    #     chi2, p, dof, ex = chi2_contingency(pivot_df)
+    #     pval_list.append(p)
+    #     pivot_df.div(pivot_df.sum(axis=1), axis=0).plot.bar(stacked=True, colors=[age_colordict.get(k, '#ffffff') for k in sorted(bla_protected_s.age_group.unique(), key=lambda d: age_order[d])], legend=False)
+    #     plt.gca().text(-0.5, 1.1, letters[letter_idx],weight="bold")
+    #     letter_idx = letter_idx + 1
+    #     plt.savefig('20190801_paper_figures/{}_age.pdf'.format(loc), bbox_inches='tight')
+    #     final_figure_list.append('age')
 
         
     clonal_sigs = ['clonal_{}'.format(c) for c in relevant_sigs_clonal]
@@ -227,20 +226,19 @@ def plot_function_TCGA(loc, input_df, n_clusters):
         row_colors.append(sub_sigs.staging_global.map(stage_global_colordict).fillna('#ababab'))
     if 'staging_pt' in input_df.columns:
         row_colors.append(sub_sigs.staging_pt.map(stage_pt_colordict).fillna('#ababab'))
-    row_colors.append(bla_protected_s.clust.map(kmeans_colordict).fillna('#ababab'))
+    #row_colors.append(bla_protected_s.clust.map(kmeans_colordict).fillna('#ababab'))
         
     g=sns.clustermap(sub_sigs[clonal_sigs + subclonal_sigs].fillna(0), cmap="Greens", vmin=0, vmax=1,
                      yticklabels=False, row_colors=row_colors,
                     row_cluster=True, col_cluster=False, figsize=(4 * len(relevant_sigs_clonal), 2 * len(relevant_sigs_clonal)))
-    g.ax_row_dendrogram.set_visible(False)
-    g.ax_col_dendrogram.set_visible(False)
+    #g.ax_row_dendrogram.set_visible(False)
     g.ax_col_dendrogram.set_visible(False)
     g.cax.set_position([0.95, .2, .03, .45])
     g.cax.set_ylabel('signature intensity', position=(0, 0.5), x=10)
     plt.setp(g.ax_heatmap.get_xticklabels(), rotation=70, ha='right', rotation_mode="anchor")
     g.ax_heatmap.set_xticklabels([item.get_text().split('_')[1] for item in g.ax_heatmap.get_xticklabels()])
     g.ax_heatmap.set_xlabel('signatures')
-    g.ax_heatmap.set_ylabel('patients', labelpad=53*len(relevant_sigs_clonal))
+    g.ax_heatmap.set_ylabel('patients', labelpad=70*len(relevant_sigs_clonal))
     g.ax_heatmap.yaxis.set_label_position("left")
     g.ax_heatmap.axvline(x=len(clonal_sigs), color='k')
     g.ax_heatmap.text(len(clonal_sigs)/3, -2, 'clonal', fontsize=6*len(relevant_sigs_clonal))
@@ -257,15 +255,14 @@ def plot_function_TCGA(loc, input_df, n_clusters):
 
     print(r'\begin{figure}')
     print(r'\centering')
-    print(r'\includegraphics[height=0.3\textheight]{{figures/{}_heatmap.pdf}}'.format(loc))
+    print(r'\includegraphics[height=0.4\textheight]{{figures/{}_heatmap.pdf}}'.format(loc))
     cap_text = 'Panel a: Stratification of patients depending on their pattern of signature change for {} patients ({} patients, including {} with a significant signature change). The heatmap represents the difference between the signature activity in the largest subclone (in terms of number of mutations) and the clonal mutations (defined as belonging to the clone of highest CCF).'.format(loc, nb_patients, nb_patients_sig)
-    print('\n')
-    for i, fig_name in enumerate(final_figure_list):
-        print(r'\includegraphics[height=0.15\textheight]{{figures/{}_{}.pdf}}'.format(loc, fig_name))
-        cap_text += text_dict[fig_name].format(letters[i+1], np.round(pval_list[i], 4))
-    print('\n')
-    print(r'\includegraphics[height=0.3\textheight]{{figures/{}_heatmap_absolute_values.pdf}}'.format(loc))   
-    cap_text += 'Panel {}: Stratification of patients depending on their complete pattern of signature exposure. The heatmap represents the signature activity in the largest subclone (in terms of number of mutations) and the clonal mutations (defined as belonging to the clone of highest CCF).'.format(letters[len(final_figure_list)], loc, nb_patients, nb_patients_sig)
+    # for i, fig_name in enumerate(final_figure_list):
+    #     print(r'\includegraphics[height=0.15\textheight]{{figures/{}_{}.pdf}}'.format(loc, fig_name))
+    #     cap_text += text_dict[fig_name].format(letters[i+1], np.round(pval_list[i], 4))
+    # print('\n')
+    print(r'\includegraphics[height=0.35\textheight]{{figures/{}_heatmap_absolute_values.pdf}}'.format(loc))   
+    cap_text += 'Panel {}: Stratification of patients depending on their complete pattern of signature exposure. The heatmap represents the signature activity in the largest subclone (in terms of number of mutations) and the clonal mutations (defined as belonging to the clone of highest CCF).'.format(letters[len(final_figure_list)+1], loc, nb_patients, nb_patients_sig)
     print('\caption{{{}}}'.format(cap_text))
     print('\label{{{}}}'.format(loc.lower()))
     print(print('\end{figure}\n'))
