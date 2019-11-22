@@ -12,7 +12,7 @@ It should be noted that more complete and up-to-date instructions of the CloneSi
 
 
 #### Installation and dependencies
-this project uses many packages. Here is a list of the most important ones. Requirement files are provided to use with pip (or conda for some specific packages, in particular ```mkl``` and ```PyClone```). Here is a list of the main ones, including some that can be installed with pip (specified). Code was run with R version 3.3.2, and Python 3.6.8 (Anaconda installation), except to run PyClone (Python 2.7.9). All computation was performed under a Centos distribution, with torque as scheduler.
+this project uses many packages. Here is a list of the most important ones. Requirement (```python27_requirements.txt``` and ```python36_requirements.txt```) files are provided to use with pip and setup two virtual environnments for Python 2.7 and 3.6 (or conda for some specific packages, in particular ```mkl``` and ```PyClone```). Here is a list of the main ones, including some that can be installed with pip (specified). Code was run with R version 3.3.2, and Python 3.6.8 (Anaconda installation), except to run PyClone (Python 2.7.9). All computation was performed under a Centos distribution, with torque as scheduler.
 
 ##### data download packages
 - [gdc transfer tool](https://gdc.cancer.gov/access-data/gdc-data-transfer-tool)
@@ -34,3 +34,5 @@ this project uses many packages. Here is a list of the most important ones. Requ
 - [lifelines](https://lifelines.readthedocs.io/en/latest/Quickstart.html)
 
 All scripts should be run from the root of the folder.
+
+
