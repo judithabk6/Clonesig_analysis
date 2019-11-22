@@ -33,6 +33,6 @@ this project uses many packages. Here is a list of the most important ones. Requ
 ##### statistical packages
 - [lifelines](https://lifelines.readthedocs.io/en/latest/Quickstart.html)
 
-All scripts should be run from the root of the folder.
+All scripts should be run from the root of the folder. Total run time is several weeks on a cluster with 60 CPUs.
 
 
