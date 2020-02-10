@@ -4,6 +4,7 @@ import time
 import numpy as np
 from datetime import datetime 
 
+
 # get table from the model selection criteria analysis
 inp = pd.read_csv('20200213_simu_cn_cancertype_run.csv', header=None, names=['idx', 'folderpath', 'nb_mut', 'fito'])
 tables = list()
@@ -220,9 +221,6 @@ for cancer_loc in CANCER_LOCS:
                 ordered=True))
     clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
     clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-
-
-
     clinical_data_dict[cancer_loc] = clinical_data
     clinical_filling = clinical_data.replace('\[Not .*\]', np.nan, regex=True)
     filled_enough_columns = clinical_filling\
