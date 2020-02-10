@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import time
+import numpy as np
 
 # get table from the model selection criteria analysis
 inp = pd.read_csv('20190528_simu_cn_cancertype_run.csv', header=None, names=['idx', 'folderpath', 'nb_mut', 'fito'])
@@ -168,7 +169,34 @@ CANCER_LOCS = ['ACC', 'BLCA', 'BRCA', 'CESC', 'CHOL', 'COADREAD', 'DLBC',
                'LIHC', 'LUAD', 'LUSC', 'MESO', 'OV', 'PAAD', 'PCPG', 'PRAD',
                'SARC', 'SKCM', 'STAD', 'TGCT', 'THCA', 'THYM', 'UCEC', 'UCS',
                'UVM']
+LOC_STAGE_COL = {loc: 'AJCC_PATHOLOGIC_TUMOR_STAGE' for loc in CANCER_LOCS}
+LOC_STAGE_COL['CESC'] = 'CLINICAL_STAGE'
+LOC_STAGE_COL['DLBC'] = 'CLINICAL_STAGE'
+LOC_STAGE_COL['GBM'] = None
+LOC_STAGE_COL['LAML'] = None
+LOC_STAGE_COL['LGG'] = None
+LOC_STAGE_COL['OV'] = 'CLINICAL_STAGE'
+LOC_STAGE_COL['PCPG'] = None
+LOC_STAGE_COL['PRAD'] = None
+LOC_STAGE_COL['SARC'] = None
+LOC_STAGE_COL['THYM'] = None
+LOC_STAGE_COL['UCEC'] = 'CLINICAL_STAGE'
+LOC_STAGE_COL['UCS'] = 'CLINICAL_STAGE'
+
+other_cols_merge = {'age_at_initial_pathologic_diagnosis', 'gender', 'race',
+                    'ajcc_pathologic_tumor_stage', 'clinical_stage',
+                    'histological_type', 'histological_grade',
+                    'initial_pathologic_dx_year', 'menopause_status',
+                    'birth_days_to', 'vital_status', 'tumor_status',
+                    'last_contact_days_to', 'death_days_to', 'cause_of_death',
+                    'new_tumor_event_type', 'new_tumor_event_site',
+                    'new_tumor_event_site_other', 'new_tumor_event_dx_days_to',
+                    'treatment_outcome_first_course', 'margin_status',
+                    'residual_tumor'}
+
+
 clinical_data_dict = dict()
+clinical_cols_dict = dict()
 for cancer_loc in CANCER_LOCS:
     # load clinical data
     clinical_data = pd.read_csv(
@@ -188,13 +216,40 @@ for cancer_loc in CANCER_LOCS:
         print(cancer_loc, clinical_data.shape)
         clinical_data = clinical_data.assign(cancer_loc=cancer_loc)
         clinical_data = clinical_data.assign(survival_days=np.nan)
+    if LOC_STAGE_COL[cancer_loc]:
+        clinical_data = clinical_data.assign(
+            stage=pd.Categorical(
+                clinical_data[LOC_STAGE_COL[cancer_loc]].str.replace('A', '')
+                .str.replace('Stage ', '').str.replace('B', '')
+                .str.replace('C', ''), categories=['I', 'II', 'III', 'IV'],
+                ordered=True))
+    else:
+        clinical_data = clinical_data.assign(stage=pd.Categorical(
+            [np.nan]*len(clinical_data), categories=['I', 'II', 'III', 'IV'],
+                ordered=True))
+    clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
+    clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
+
+
 
     clinical_data_dict[cancer_loc] = clinical_data
+    clinical_filling = clinical_data.replace('\[Not .*\]', np.nan, regex=True)
+    filled_enough_columns = clinical_filling\
+        .columns[clinical_filling.count() /
+                 clinical_filling.shape[0] > 0.8]
+    clinical_cols_dict[cancer_loc] = set(filled_enough_columns.to_list())
+    # pour essayer de merger avec les variants germline, fichier 1-s2.0-S0092867418303635-mmc2.xlsx
+    # mais en fait je vais essayer de récupérer des données directement avec
+    # l'espoir d'avoir le TCGA barcode pour merger facilement
+    # print(cancer_loc, {c.lower() for c in clinical_data.columns}.intersection(other_cols_merge))
 
-common_cols = ['PATIENT_ID', 'binary_vital_status', 'survival_days', 'AGE', 'cancer_loc']
+
+common_cols = ['PATIENT_ID', 'binary_vital_status', 'survival_days', 'AGE', 'cancer_loc', 'age_group', 'SEX', 'stage']
 clinical_data_merge = pd.concat([clinical_data_dict[loc][common_cols] for loc in CANCER_LOCS], axis=0)
 big_merge = pd.merge(big_table2, clinical_data_merge, left_on='patient_id', right_on='PATIENT_ID', how='left')
 big_merge.to_csv('20190824_tcga_results_survival_restr.csv', sep='\t', index=False)
+
+big_merge.to_csv('20200205_tcga_results_survival_restr.csv', sep='\t', index=False)
 
 
 
