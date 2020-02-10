@@ -47,6 +47,13 @@ for cancer_loc, sig_list in modif_dict.items():
     for sig in sig_list:
         final_table_filter.loc[sig, cancer_loc] = 1
 
+# exclude artefactual signatures SBS27 SBS43 SBS45 SBS46 SBS47 SBS48 SBS49 SBS50 SBS51 SBS52 SBS53 SBS54 SBS55 SBS56 SBS57 SBS58 SBS59 SBS60
+artefactual_sigs = ['SBS27', 'SBS43', 'SBS45', 'SBS46', 'SBS47', 'SBS48',
+                    'SBS49', 'SBS50', 'SBS51', 'SBS52', 'SBS53', 'SBS54',
+                    'SBS55', 'SBS56', 'SBS57', 'SBS58', 'SBS59', 'SBS60']
+for sig in artefactual_sigs:
+    final_table_filter.loc[sig, :] = 0
+
 final_table_filter.to_csv('external_data/curated_match_signature_cancertype_tcgawes_literature.csv', sep='\t')
 '''
 # adding some signatures if needed, with associated reference.
