@@ -102,3 +102,8 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# results and data
+*.csv
+results/
+*simulation*
