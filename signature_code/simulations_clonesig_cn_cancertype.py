@@ -19,7 +19,7 @@ seed_job = int(sys.argv[5])
 
 '''
 nb_clones = 2
-nb_mut = 300
+nb_mut = 1000
 cancer_type = 5
 perc_dip = 20 / 100.0
 seed_job = 4
@@ -36,7 +36,7 @@ NEW_SIG_MATRIX = SIG_MATRIX + 10**-20 * (SIG_MATRIX == 0)
 MU = NEW_SIG_MATRIX / NEW_SIG_MATRIX.sum(axis=1)[:, np.newaxis]
 
 # get the signatures specific of the cancer type
-cancer_type_sig = pd.read_csv(cancer_type_sig_filename, sep='\t').values
+cancer_type_sig = pd.read_csv(cancer_type_sig_filename, sep='\t', index_col=0).values
 select = cancer_type_sig[:, cancer_type]
 subMU = MU[select.astype(bool), :]
 
@@ -82,6 +82,7 @@ uu.write_clonesig(foldername)
 uu.write_pyclone_sciclone_ccube(foldername)
 uu.write_deconstructsig(foldername)
 uu.write_tracksig(foldername)
+uu.write_tracksigfreq(foldername)
 uu.write_palimpsest(foldername)
 uu.write_dpclust(foldername)
 uu.write_phylogicndt(foldername)

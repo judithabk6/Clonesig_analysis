@@ -37,9 +37,27 @@ var_ccube_2=`date +%s`
 #if [ $nb_mut -gt 599 ]; then
 ./signature_code/run_tracksig.R -f $folder_path
 #fi
+# run tracksigfreq
+./signature_code/run_tracksigfreq.R -f $folder_path
+
 # run palimpsest
 ./signature_code/run_palimpsest.R -f $folder_path
 
+# run dpclust
+var_dpclust_1=`date +%s`
+R --vanilla --slave -q -f /bioinfo/users/jabecass/dl_tools_centos/dpclust/inst/example/dpclust_pipeline.R --args -r 1 -d $folder_path/dpclust -o $folder_path/dpclust -i $folder_path/dpclust/info.tsv
+var_dpclust_2=`date +%s`
+
+# run phylogicNDT
+source activate my_python27_PhylogicNDT
+purity=`cat $folder_path/purity.txt`
+var_phylogicndt_1=`date +%s`
+cd $folder_path/phylogicndt
+/data/users/jabecass/dl_tools_centos/PhylogicNDT/PhylogicNDT.py Cluster -i Test_Clust -s sample_01:input.maf::$purity:1 --maf_input_type calc_ccf
+rm -r Test_Clust.phylogic_report.html Test_Clust_1d_mutation_plots Test_Clust_1d_cluster_plots
+cd ../../..
+var_phylogicndt_2=`date +%s`
+source deactivate
 
 source activate my_python36_centos
 ./signature_code/evaluate_pyclone.py $folder_path $var_pyclone_1 $var_pyclone_2
@@ -47,6 +65,9 @@ source activate my_python36_centos
 ./signature_code/evaluate_ccube.py $folder_path $var_ccube_1 $var_ccube_2
 ./signature_code/evaluate_deconstructsig.py $folder_path
 ./signature_code/evaluate_tracksig.py $folder_path
+./signature_code/evaluate_tracksigfreq.py $folder_path
 ./signature_code/evaluate_palimpsest.py $folder_path
 ./signature_code/evaluate_clonesig_simu.py $folder_path
+./signature_code/evaluate_dpclust.py $folder_path $var_dpclust_1 $var_dpclust_2
+./signature_code/evaluate_phylogicndt.py $folder_path $var_phylogicndt_1 $var_phylogicndt_2
 

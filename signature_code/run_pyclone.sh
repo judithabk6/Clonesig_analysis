@@ -13,10 +13,11 @@ source /data/users/jabecass/dl_tools_centos/miniconda3_activate
 source activate my_python27_centos
 purity=`cat $folder_path/purity.txt`
 var_pyclone_1=`date +%s`
-PyClone run_analysis_pipeline --in_files $folder_path/pyclone/input.tsv --working_dir $folder_path/pyclone --tumour_contents $purity 
+timeout 172800 PyClone run_analysis_pipeline --in_files $folder_path/pyclone/input.tsv --working_dir $folder_path/pyclone --tumour_contents $purity 
+# PyClone run_analysis_pipeline --in_files $folder_path/pyclone/input.tsv --working_dir $folder_path/pyclone --tumour_contents $purity 
 var_pyclone_2=`date +%s`
 source deactivate
-
+echo $var_pyclone_1,$var_pyclone_2 > $folder_path/pyclone_timing.txt
 
 
 

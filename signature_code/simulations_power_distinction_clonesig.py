@@ -9,18 +9,12 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from clonesig.data_loader import SimLoader
 from util_functions import safe_mkdir
+from clonesig.run_clonesig import get_MU
 
 
-sig_file_path = 'external_data/sigProfiler_SBS_signatures_2018_03_28.csv'
-cancer_type_sig_filename = 'external_data/match_cancer_type_sig_v3.csv'
 
-# open the matrix describing the signatures
-SIG = pd.read_csv(sig_file_path)
-SIG_MATRIX = SIG.values[:, 2:].astype(float).T
-L, K = SIG_MATRIX.shape
-NEW_SIG_MATRIX = SIG_MATRIX + 10**-20 * (SIG_MATRIX == 0)
-MU = NEW_SIG_MATRIX / NEW_SIG_MATRIX.sum(axis=1)[:, np.newaxis]
-
+MU = get_MU()
+L, K = MU.shape
 
 # get pi values (haha) that cover the spectrum
 np.random.seed(7)
@@ -41,7 +35,7 @@ d.fit()
 M_r = 20
 valid_pi = list()
 pi_dist_kept = list()
-while len(valid_pi) < 30:
+while len(valid_pi) < 50:
     u = np.random.random()
     nb_active_sig = np.random.poisson(7) + 1
     active_signatures = np.random.choice(L, nb_active_sig, replace=False)
@@ -59,11 +53,11 @@ while len(valid_pi) < 30:
 
 
 # simulate data
-expname = '20190803_simulations_eval_clonesig_power'
+expname = '20200305_simulations_eval_clonesig_power'
 safe_mkdir(expname)
 for nb_pi, pi in enumerate(valid_pi):
     for nb_phi, subclone_phi in enumerate((1-np.logspace(-0.5, 0.95, 10)/10)):
-        for nb_mut in (100, 300, 1000):
+        for nb_mut in (30, 100, 300, 1000):
             for perc_dip in (0.1, 0.5, 0.9):
                 for depth in (100, 500):
                     foldername = ('{}/pi{}-phi{}-depth{}-percdip{}-nb_mut{}'.
@@ -81,5 +75,8 @@ for nb_pi, pi in enumerate(valid_pi):
                     uu.write_deconstructsig(foldername)
                     uu.write_tracksig(foldername)
                     uu.write_palimpsest(foldername)
+                    uu.write_dpclust(foldername)
+                    uu.write_phylogicndt(foldername)
+                    uu.write_tracksigfreq(foldername)
 
 

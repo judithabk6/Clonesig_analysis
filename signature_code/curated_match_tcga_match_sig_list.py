@@ -33,7 +33,7 @@ modif_dict = {'BLCA': ['SBS8', 'SBS40', 'SBS29'],
               'KICH': ['SBS13', 'SBS17b', 'SBS29'],
               'KIRC': ['SBS2', 'SBS3', 'SBS9', 'SBS13', 'SBS17a', 'SBS17b', 'SBS22', 'SBS29', 'SBS41'],
               'LIHC': ['SBS3', 'SBS4', 'SBS6', 'SBS12', 'SBS17a', 'SBS17b', 'SBS18', 'SBS23', 'SBS35', 'SBS14', 'SBS19', 'SBS26', 'SBS28', 'SBS29', 'SBS31', 'SBS35'],
-              'LUAD': ['SBS3', 'SBS9', 'SBS17a', 'SBS17b', 'SBS18', 'SBS28']
+              'LUAD': ['SBS3', 'SBS9', 'SBS17a', 'SBS17b', 'SBS18', 'SBS28'],
               'LUSC': ['SBS8'],
               'MESO': ['SBS13'],
               'OV': ['SBS8', 'SBS16', 'SBS39', 'SBS18', 'SBS26', 'SBS35', 'SBS41'],

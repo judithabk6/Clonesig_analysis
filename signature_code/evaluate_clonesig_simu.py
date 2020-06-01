@@ -22,62 +22,6 @@ from sklearn.metrics import matthews_corrcoef
 from sklearn.metrics.cluster import v_measure_score
 import pkg_resources
 
-folder_path = sys.argv[1]
-
-
-'''
-folder_path = '20190623_simulations_clonesig_cn_cancer_type/type2-perc_diploid100-nb_clones4-nb_mut100'
-'''
-
-"""
-1,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid0-nb_clones1-nb_mut100-true_c_mut100
-2,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid20-nb_clones1-nb_mut100-true_c_mut100
-3,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid40-nb_clones1-nb_mut100-true_c_mut100
-4,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid60-nb_clones1-nb_mut100-true_c_mut100
-5,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid80-nb_clones1-nb_mut100-true_c_mut100
-6,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid100-nb_clones1-nb_mut100-true_c_mut100
-7,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid0-nb_clones1-nb_mut300-true_c_mut100
-8,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid20-nb_clones1-nb_mut300-true_c_mut100
-9,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid40-nb_clones1-nb_mut300-true_c_mut100
-10,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid60-nb_clones1-nb_mut300-true_c_mut100
-(my_python36_centos) -bash-4.2$ grep "^366," 20190618_eval_clonesig.csv
-366,20190528_simulations_clonesig_cn_cancer_type/type2-perc_diploid100-nb_clones4-nb_mut100-true_c_mut100
-20190528_simulations_clonesig_cn_cancer_type/type3-perc_diploid60-nb_clones1-nb_mut600-true_c_mut100
-"""
-
-cancer_type = int(folder_path.split('/')[1].split('type')[1].split('-')[0])
-perc_diploid = int(folder_path.split('/')[1].split('perc_diploid')[1].split('-')[0])
-nb_clones = int(folder_path.split('/')[1].split('nb_clones')[1].split('-')[0])
-nb_mut = int(folder_path.split('/')[1].split('nb_mut')[1].split('-')[0])
-
-MU = get_MU()
-subMU = get_MU(cancer_type=cancer_type)
-
-
-data_df = pd.read_csv('{}/input_t.tsv'.format(folder_path), sep='\t')
-with open('{}/purity.txt'.format(folder_path), 'r') as f:
-    purity = float(f.read())
-
-# get metrics from simulated data
-with open('{}/sim_data'.format(folder_path), 'rb') as sim_pickle_file:
-    sim_pickle = pickle.Unpickler(sim_pickle_file)
-    sim_data_obj = sim_pickle.load()
-dist_matrix = sp.spatial.distance.squareform(sp.spatial.distance.pdist(sim_data_obj.pi.dot(sim_data_obj.MU), 'cosine'))
-if len(dist_matrix[dist_matrix > 0]):
-    min_dist = np.min(dist_matrix[dist_matrix > 0])
-    max_dist = np.max(dist_matrix[dist_matrix > 0])
-    avg_dist = np.mean(dist_matrix[dist_matrix > 0])
-else:
-    min_dist, max_dist, avg_dist = np.nan, np.nan, np.nan
-avg_major_cn = np.mean(sim_data_obj.C_tumor_tot - sim_data_obj.C_tumor_minor)
-avg_tot_cn = np.mean(sim_data_obj.C_tumor_tot)
-actual_perc_diploid = sum((sim_data_obj.C_tumor_tot == 2) & (sim_data_obj.C_tumor_minor == 1))/sim_data_obj.N
-
-
-with open('{}/sim_data'.format(folder_path), 'rb') as sim_pickle_file:
-    sim_pickle = pickle.Unpickler(sim_pickle_file)
-    sim_data_obj = sim_pickle.load()
-
 
 def score1B(sim, est):
     J_true = len(sim.phi)
@@ -147,13 +91,15 @@ def score_sig_1C(sim, est, cancer_type=None, fitted_sigs=None):
     sim_sig = sim.xi.dot(sim.pi)
     est_sig = est.xi.dot(est.pi)
 
-
-    filter_filename = 'data/match_cancer_type_sig_v3.csv'
+    filter_filename = 'data/curated_match_signature_cancertype_tcgawes_literature.csv'
     cancer_type_sig = pd.read_csv(pkg_resources.resource_stream(
-        'clonesig', filter_filename), index_col=0).values
-    select = cancer_type_sig[cancer_type, :].astype(bool)
+        'clonesig', filter_filename), sep='\t', index_col=0).values
+    select = cancer_type_sig[:, cancer_type].astype(bool)
+    big_select = cancer_type_sig.sum(axis=1).astype(bool)
     if fitted_sigs is not None:
-        selectb = fitted_sigs
+        selectb = np.zeros(65)
+        selectb[big_select] = fitted_sigs
+        selectb = selectb.astype(bool)
     else:
         selectb = select
     if sim.MU.shape[0] == 65:
@@ -162,8 +108,11 @@ def score_sig_1C(sim, est, cancer_type=None, fitted_sigs=None):
         # ids of simulated signatures
         big_pi_sim = np.zeros(65)
         big_pi_sim[select] = sim_sig
-    if est.mu_matrix.shape[0] == 65:
+    if len(est_sig) == 65:
         big_pi_est = est_sig
+    elif len(est_sig) == 47:
+        big_pi_est = np.zeros(65)
+        big_pi_est[big_select] = est_sig
     else:
         big_pi_est = np.zeros(65)
         big_pi_est[selectb] = est_sig
@@ -183,17 +132,22 @@ def score_sig_1D(sim, est, cancer_type=None, fitted_sigs=None):
     est_sig = est.rnus[np.arange(est.N), est.qun.argmax(axis=1), :].argmax(axis=1)
     sim_sig = sim.S.copy()
     if sim.MU.shape != est.mu_matrix.shape:
-        filter_filename = 'data/match_cancer_type_sig_v3.csv'
+        filter_filename = 'data/curated_match_signature_cancertype_tcgawes_literature.csv'
         cancer_type_sig = pd.read_csv(pkg_resources.resource_stream(
-            'clonesig', filter_filename), index_col=0).values
-        select = cancer_type_sig[cancer_type, :].astype(bool)
+            'clonesig', filter_filename), sep='\t', index_col=0).values
+        select = cancer_type_sig[:, cancer_type].astype(bool)
+        big_select = cancer_type_sig.sum(axis=1).astype(bool)
         if fitted_sigs is not None:
-            selectb = fitted_sigs
+            selectb = np.zeros(65)
+            selectb[big_select] = fitted_sigs
+            selectb = selectb.astype(bool)
         else:
             selectb = select
         if sim.MU.shape[0] != 65:
             sim_sig = np.array([np.where(select)[0][int(i)] for i in sim_sig])
-        if est.mu_matrix.shape[0] != 65:
+        if est.mu_matrix.shape[0] == 47:
+            est_sig = np.array([np.where(big_select)[0][int(i)] for i in est_sig])
+        elif est.mu_matrix.shape[0] < 47:
             est_sig = np.array([np.where(selectb)[0][int(i)] for i in est_sig])
     return score_sig_1D_base(sim_sig, est_sig)
 
@@ -207,99 +161,163 @@ def score_sig_1E(sim, est):
     est_dist = est.pi[est.qun.argmax(axis=1), :].dot(est.mu_matrix)
     return score_sig_1E_base(true_dist, est_dist)
 
-method = 'clonesig'
-id_list = list()
-metrics_list = list()
-for setting in ('cancer_type', 'prefit', 'all', 'all_nuclonal'):
-    if setting == 'cancer_type':
-        MU = get_MU(cancer_type=cancer_type)
-        model_selection_kws = {'factor':  0.093}
+if __name__ == '__main__':
+    folder_path = sys.argv[1]
+
+
+    '''
+    folder_path = '20190623_simulations_clonesig_cn_cancer_type/type2-perc_diploid100-nb_clones4-nb_mut100'
+    '''
+
+    """
+    1,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid0-nb_clones1-nb_mut100-true_c_mut100
+    2,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid20-nb_clones1-nb_mut100-true_c_mut100
+    3,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid40-nb_clones1-nb_mut100-true_c_mut100
+    4,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid60-nb_clones1-nb_mut100-true_c_mut100
+    5,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid80-nb_clones1-nb_mut100-true_c_mut100
+    6,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid100-nb_clones1-nb_mut100-true_c_mut100
+    7,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid0-nb_clones1-nb_mut300-true_c_mut100
+    8,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid20-nb_clones1-nb_mut300-true_c_mut100
+    9,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid40-nb_clones1-nb_mut300-true_c_mut100
+    10,20190528_simulations_clonesig_cn_cancer_type/type0-perc_diploid60-nb_clones1-nb_mut300-true_c_mut100
+    (my_python36_centos) -bash-4.2$ grep "^366," 20190618_eval_clonesig.csv
+    366,20190528_simulations_clonesig_cn_cancer_type/type2-perc_diploid100-nb_clones4-nb_mut100-true_c_mut100
+    20190528_simulations_clonesig_cn_cancer_type/type3-perc_diploid60-nb_clones1-nb_mut600-true_c_mut100
+    """
+
+    cancer_type = int(folder_path.split('/')[1].split('type')[1].split('-')[0])
+    perc_diploid = int(folder_path.split('/')[1].split('perc_diploid')[1].split('-')[0])
+    nb_clones = int(folder_path.split('/')[1].split('nb_clones')[1].split('-')[0])
+    nb_mut = int(folder_path.split('/')[1].split('nb_mut')[1].split('-')[0])
+
+    sig_file_path = 'external_data/sigProfiler_SBS_signatures_2018_03_28.csv'
+    cancer_type_sig_filename = 'external_data/curated_match_signature_cancertype_tcgawes_literature.csv'
+
+    # open the matrix describing the signatures
+    MU = get_MU()
+    subMU = get_MU(cancer_type=cancer_type)
+
+
+    data_df = pd.read_csv('{}/input_t.tsv'.format(folder_path), sep='\t')
+    with open('{}/purity.txt'.format(folder_path), 'r') as f:
+        purity = float(f.read())
+
+    # get metrics from simulated data
+    with open('{}/sim_data'.format(folder_path), 'rb') as sim_pickle_file:
+        sim_pickle = pickle.Unpickler(sim_pickle_file)
+        sim_data_obj = sim_pickle.load()
+    dist_matrix = sp.spatial.distance.squareform(sp.spatial.distance.pdist(sim_data_obj.pi.dot(sim_data_obj.MU), 'cosine'))
+    if len(dist_matrix[dist_matrix > 0]):
+        min_dist = np.min(dist_matrix[dist_matrix > 0])
+        max_dist = np.max(dist_matrix[dist_matrix > 0])
+        avg_dist = np.mean(dist_matrix[dist_matrix > 0])
     else:
-        MU = get_MU()
-        model_selection_kws = {'factor': 0.048}
-
-    if setting == 'all_nuclonal':
-        nuh = 'clonal'
-    elif setting == 'all_minor':
-        nuh = 'minor'
-    else:
-        nuh = None
-    pf = False
-    if setting == 'prefit':
-        # model_selection_kws = {'factor': 0.022}
-        pf = True
-    start = time.time()
-    new_est, lr, pval, new_inputMU, cst_est, fitted_sigs = run_clonesig(
-        data_df.trinucleotide.values, data_df.var_counts.values,
-        data_df.var_counts.values + data_df.ref_counts.values,
-        data_df.normal_cn.values,
-        data_df.minor_cn.values + data_df.major_cn.values,
-        data_df.minor_cn.values, purity, MU, inputNu=None, nu_heuristics=nuh,
-        return_sig_change_test=True, min_mut_clone=0, min_prop_sig=0.0,
-        prefit_signatures=pf, prefit_thresh=0.01, model_selection_function=None,
-        model_selection_kws=model_selection_kws, max_nb_clones=10)
-    end = time.time()
-    ev, _ = np.linalg.eig(1-sp.spatial.distance.squareform(sp.spatial.distance.pdist(new_inputMU, 'cosine')))
-    dof = sum(ev > EV_DOF_THRESHOLD)
-
-    id_list.append([cancer_type, perc_diploid, nb_clones, nb_mut,
-                    MU.shape[0], new_inputMU.shape[0], min_dist, max_dist, avg_dist,
-                    avg_major_cn, actual_perc_diploid, avg_tot_cn, method, setting, dof])
-    sml = list()
-    sml.append(new_est.J)
-    sml.append(lr)
-    sml.append(pval)
-    sml.append(score1B(sim_data_obj, new_est))
-    sml.append(score1C(sim_data_obj, new_est))
-    sml.append(score2A(sim_data_obj, new_est))
-    auc, accuracy, sensitivity, specificity, precision = score2C(sim_data_obj, new_est)
-    for v in (auc, accuracy, sensitivity, specificity, precision):
-        sml.append(v)
-    sml.append(score_sig_1A(sim_data_obj, new_est))
-    sml.append(score_sig_1B(sim_data_obj, new_est))
-    auc, accuracy, sensitivity, specificity, precision = score_sig_1C(
-        sim_data_obj, new_est, cancer_type=cancer_type,
-        fitted_sigs=fitted_sigs)
-    for v in (auc, accuracy, sensitivity, specificity, precision):
-        sml.append(v)
-    sml.append(score_sig_1D(sim_data_obj, new_est, cancer_type=cancer_type,
-                            fitted_sigs=fitted_sigs))
-    (min_diff_distrib_mut, max_diff_distrib_mut, std_diff_distrib_mut,
-        median_diff_distrib_mut, perc_dist_5, perc_dist_10) = score_sig_1E(
-        sim_data_obj, new_est)
-    for v in (min_diff_distrib_mut, max_diff_distrib_mut, std_diff_distrib_mut,
-              median_diff_distrib_mut, perc_dist_5, perc_dist_10):
-        sml.append(v)
-    sml.append(end-start)
-    metrics_list.append(sml)
-#    with open('{}/{}_clonesig_raw_results'
-#              .format(folder_path, setting), 'wb') as raw_res:
-#        if new_est.mu_matrix.shape[0] == 65:
-#            new_est.mu_matrix = None
-#            cst_est.mu_matrix = None
-#        my_pickler = pickle.Pickler(raw_res)
-#        my_pickler.dump([new_est, lr, pval, cst_est, fitted_sigs])
+        min_dist, max_dist, avg_dist = np.nan, np.nan, np.nan
+    avg_major_cn = np.mean(sim_data_obj.C_tumor_tot - sim_data_obj.C_tumor_minor)
+    avg_tot_cn = np.mean(sim_data_obj.C_tumor_tot)
+    actual_perc_diploid = sum((sim_data_obj.C_tumor_tot == 2) & (sim_data_obj.C_tumor_minor == 1))/sim_data_obj.N
 
 
-sample_id_cols = ['cancer_type', 'perc_diploid', 'nb_clones', 'nb_mut',
-                  'nb_sig', 'nb_sig_fit', 'min_dist', 'max_dist', 'avg_dist',
-                  'avg_major_cn', 'actual_perc_diploid', 'avg_tot_cn',
-                  'method', 'setting', 'dof']
-metrics_cols = ['fitted_nb_clones', 'll_ratio', 'pval', 'score1B', 'score1C',
-                'score2A', 'score2C_auc', 'score2C_accuracy',
-                'score2C_sensitivity', 'score2C_specificity',
-                'score2C_precision', 'score_sig_1A', 'score_sig_1B',
-                'score_sig_1C_auc', 'score_sig_1C_accuracy',
-                'score_sig_1C_sensitivity', 'score_sig_1C_specificity',
-                'score_sig_1C_precision', 'score_sig_1D',
-                'min_diff_distrib_mut', 'max_diff_distrib_mut',
-                'std_diff_distrib_mut', 'median_diff_distrib_mut',
-                'perc_dist_5', 'perc_dist_10', 'runtime']
-id_df = pd.DataFrame(id_list, columns=sample_id_cols)
-metrics_df = pd.DataFrame(metrics_list, columns=metrics_cols)
+    with open('{}/sim_data'.format(folder_path), 'rb') as sim_pickle_file:
+        sim_pickle = pickle.Unpickler(sim_pickle_file)
+        sim_data_obj = sim_pickle.load()
 
-res_df = pd.concat([id_df, metrics_df], axis=1)
 
-res_df.to_csv('{}/eval_clonesig.tsv'.format(folder_path), sep='\t',
-              index=False)
-print('+', '{}/eval_clonesig.tsv'.format(folder_path), '+', sep='')
+
+
+    method = 'clonesig'
+    id_list = list()
+    metrics_list = list()
+    for setting in ('cancer_type', 'prefit', 'all', 'all_nuclonal'):
+        if setting == 'cancer_type':
+            MU = get_MU(cancer_type=cancer_type)
+            model_selection_kws = {'factor':  0.093}
+        else:
+            MU = get_MU()
+            model_selection_kws = {'factor': 0.048}
+
+        if setting == 'all_nuclonal':
+            nuh = 'clonal'
+        elif setting == 'all_minor':
+            nuh = 'minor'
+        else:
+            nuh = None
+        pf = False
+        if setting == 'prefit':
+            # model_selection_kws = {'factor': 0.022}
+            pf = True
+        start = time.time()
+        new_est, lr, pval, new_inputMU, cst_est, fitted_sigs = run_clonesig(
+            data_df.trinucleotide.values, data_df.var_counts.values,
+            data_df.var_counts.values + data_df.ref_counts.values,
+            data_df.normal_cn.values,
+            data_df.minor_cn.values + data_df.major_cn.values,
+            data_df.minor_cn.values, purity, MU, inputNu=None, nu_heuristics=nuh,
+            return_sig_change_test=True, min_mut_clone=0, min_prop_sig=0.0,
+            prefit_signatures=pf, prefit_thresh=0.01, model_selection_function=None,
+            model_selection_kws=model_selection_kws, max_nb_clones=10)
+        end = time.time()
+        ev, _ = np.linalg.eig(1-sp.spatial.distance.squareform(sp.spatial.distance.pdist(new_inputMU, 'cosine')))
+        dof = sum(ev > EV_DOF_THRESHOLD)
+
+        id_list.append([cancer_type, perc_diploid, nb_clones, nb_mut,
+                        MU.shape[0], new_inputMU.shape[0], min_dist, max_dist, avg_dist,
+                        avg_major_cn, actual_perc_diploid, avg_tot_cn, method, setting, dof])
+        sml = list()
+        sml.append(new_est.J)
+        sml.append(lr)
+        sml.append(pval)
+        sml.append(score1B(sim_data_obj, new_est))
+        sml.append(score1C(sim_data_obj, new_est))
+        sml.append(score2A(sim_data_obj, new_est))
+        auc, accuracy, sensitivity, specificity, precision = score2C(sim_data_obj, new_est)
+        for v in (auc, accuracy, sensitivity, specificity, precision):
+            sml.append(v)
+        sml.append(score_sig_1A(sim_data_obj, new_est))
+        sml.append(score_sig_1B(sim_data_obj, new_est))
+        auc, accuracy, sensitivity, specificity, precision = score_sig_1C(
+            sim_data_obj, new_est, cancer_type=cancer_type,
+            fitted_sigs=fitted_sigs)
+        for v in (auc, accuracy, sensitivity, specificity, precision):
+            sml.append(v)
+        sml.append(score_sig_1D(sim_data_obj, new_est, cancer_type=cancer_type,
+                                fitted_sigs=fitted_sigs))
+        (min_diff_distrib_mut, max_diff_distrib_mut, std_diff_distrib_mut,
+            median_diff_distrib_mut, perc_dist_5, perc_dist_10) = score_sig_1E(
+            sim_data_obj, new_est)
+        for v in (min_diff_distrib_mut, max_diff_distrib_mut, std_diff_distrib_mut,
+                  median_diff_distrib_mut, perc_dist_5, perc_dist_10):
+            sml.append(v)
+        sml.append(end-start)
+        metrics_list.append(sml)
+    #    with open('{}/{}_clonesig_raw_results'
+    #              .format(folder_path, setting), 'wb') as raw_res:
+    #        if new_est.mu_matrix.shape[0] == 65:
+    #            new_est.mu_matrix = None
+    #            cst_est.mu_matrix = None
+    #        my_pickler = pickle.Pickler(raw_res)
+    #        my_pickler.dump([new_est, lr, pval, cst_est, fitted_sigs])
+
+
+    sample_id_cols = ['cancer_type', 'perc_diploid', 'nb_clones', 'nb_mut',
+                      'nb_sig', 'nb_sig_fit', 'min_dist', 'max_dist', 'avg_dist',
+                      'avg_major_cn', 'actual_perc_diploid', 'avg_tot_cn',
+                      'method', 'setting', 'dof']
+    metrics_cols = ['fitted_nb_clones', 'll_ratio', 'pval', 'score1B', 'score1C',
+                    'score2A', 'score2C_auc', 'score2C_accuracy',
+                    'score2C_sensitivity', 'score2C_specificity',
+                    'score2C_precision', 'score_sig_1A', 'score_sig_1B',
+                    'score_sig_1C_auc', 'score_sig_1C_accuracy',
+                    'score_sig_1C_sensitivity', 'score_sig_1C_specificity',
+                    'score_sig_1C_precision', 'score_sig_1D',
+                    'min_diff_distrib_mut', 'max_diff_distrib_mut',
+                    'std_diff_distrib_mut', 'median_diff_distrib_mut',
+                    'perc_dist_5', 'perc_dist_10', 'runtime']
+    id_df = pd.DataFrame(id_list, columns=sample_id_cols)
+    metrics_df = pd.DataFrame(metrics_list, columns=metrics_cols)
+
+    res_df = pd.concat([id_df, metrics_df], axis=1)
+
+    res_df.to_csv('{}/eval_clonesig.tsv'.format(folder_path), sep='\t',
+                  index=False)
+    print('+', '{}/eval_clonesig.tsv'.format(folder_path), '+', sep='')

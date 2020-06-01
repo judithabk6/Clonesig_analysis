@@ -12,17 +12,15 @@ from util_functions import safe_mkdir
 from scipy.stats import beta
 import sys
 import scipy as sp
+from clonesig.run_clonesig import get_MU
 
 
 sig_file_path = 'external_data/sigProfiler_SBS_signatures_2018_03_28.csv'
 cancer_type_sig_filename = 'external_data/match_cancer_type_sig_v3.csv'
 
 # open the matrix describing the signatures
-SIG = pd.read_csv(sig_file_path)
-SIG_MATRIX = SIG.values[:, 2:].astype(float).T
-L, K = SIG_MATRIX.shape
-NEW_SIG_MATRIX = SIG_MATRIX + 10**-20 * (SIG_MATRIX == 0)
-MU = NEW_SIG_MATRIX / NEW_SIG_MATRIX.sum(axis=1)[:, np.newaxis]
+MU = get_MU()
+L, K = MU.shape
 
 nb_clones = int(sys.argv[1])
 # get pi values (haha) that cover the spectrum
@@ -68,10 +66,10 @@ while len(valid_pi) < 30:
 
 nb_phi = nb_clones
 # simulate data
-expname = '20190804_simulations_eval_clonesig_power'
+expname = '20200430_simulations_eval_clonesig_power'
 safe_mkdir(expname)
 for nb_pi, pi in enumerate(valid_pi):
-    for nb_mut in (100, 300, 1000):
+    for nb_mut in (30, 100, 300, 1000):
         for perc_dip in (0.1, 0.5, 0.9):
             for depth in (100, 500):
                 foldername = ('{}/pi{}-phi{}-depth{}-percdip{}-nb_mut{}'.
@@ -88,6 +86,7 @@ for nb_pi, pi in enumerate(valid_pi):
                 uu.write_pyclone_sciclone_ccube(foldername)
                 uu.write_deconstructsig(foldername)
                 uu.write_tracksig(foldername)
+                uu.write_tracksigfreq(foldername)
                 uu.write_palimpsest(foldername)
 
 
