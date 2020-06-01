@@ -238,8 +238,6 @@ clinical_data_merge = pd.concat([clinical_data_dict[loc][common_cols] for loc in
 big_merge = pd.merge(big_table2, clinical_data_merge, left_on='patient_id', right_on='PATIENT_ID', how='left')
 big_merge.to_csv('20200214_tcga_results_survival_restr.csv', sep='\t', index=False)
 
-big_merge.to_csv('20200205_tcga_results_survival_restr.csv', sep='\t', index=False)
-
 
 pcawg_folder = '20200510_pcawg'
 inp = pd.read_csv('20200510_pcawgs_final_patient_list.csv', header=None, names=['idx', 'patient_id', 'cancer_loc', 'cohort'])

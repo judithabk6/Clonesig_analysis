@@ -36,7 +36,13 @@ def plot_function_PCAWG(loc, input_df):
     bla_protected = pd.DataFrame(input_df[[c for c in input_df if 'subclonal_SBS' in c]].fillna(0).values - input_df[[c for c in input_df if ('clonal_SBS' in c) and ("sub" not in c)]].fillna(0).values, columns=sbs_names)
     relevant_idx = input_df[input_df.pval<=0.05].index
     bla_protected[~bla_protected.index.isin(relevant_idx)] = 0
+<<<<<<< HEAD
     relevant_sigs = [c for i, c in enumerate(bla_protected.columns) if np.abs(bla_protected).sum(axis=0)[c]>0]
+=======
+
+    relevant_sigs = [c for i, c in enumerate(bla_protected.columns) if np.abs(bla_protected).sum(axis=0)[c]>0.2]
+
+>>>>>>> update code clonesig review
     relevant_sigs_clonal = [c for i, c in enumerate(bla_protected.columns) if input_df['clonal_{}'.format(c)].sum()>0]
     print(len(relevant_sigs), len(relevant_sigs_clonal))
 

@@ -220,6 +220,22 @@ mkdir -p logs/20201011_fix_eval
 qsub -t 10-2942%55 -N 20201011_fix_eval -q batch -d $PWD -l walltime=1:00:00,mem=15gb,nodes=1:ppn=1 -o logs/20201011_fix_eval -e logs/20201011_fix_eval -v INPUT_FILE=20201011_fix_eval.csv signature_code/fix_evaluate.sh
 
 
+
+mkdir -p logs/2020420_big_run_pyclone_cst
+qsub -t 1-396%90 -N 2020420_big_run_pyclone_cst -q batch -d $PWD -l walltime=96:00:00,mem=5gb,nodes=1:ppn=1 -o logs/2020420_big_run_pyclone_cst -e logs/2020308_big_run_pyclone -v INPUT_FILE=2020308_big_run_pyclone.csv signature_code/run_pyclone.sh
+
+# evaluation on the dream dataset
+rm -f 20200415_dream_run.csv
+j=1
+for i in {2..6}; do
+for depth in {8,16,32,64,128}; do
+echo $j,"T${i},${depth}X" >> 20200415_dream_run.csv
+j=$((j+1)); 
+done
+done
+mkdir -p logs/20200415_dream_run
+qsub -t 1-25 -N 20200415_dream_run -q batch -d $PWD -l walltime=120:00:00,mem=10gb,nodes=1:ppn=1 -o logs/20200415_dream_run -e logs/20200415_dream_run -v INPUT_FILE=20200415_dream_run.csv signature_code/run_all_methods_dream.sh
+
 # 2942%55
 
 ############################################################
