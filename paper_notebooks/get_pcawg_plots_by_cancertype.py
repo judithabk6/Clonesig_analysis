@@ -40,7 +40,7 @@ def plot_function_PCAWG(loc, input_df):
     relevant_sigs = [c for i, c in enumerate(bla_protected.columns) if np.abs(bla_protected).sum(axis=0)[c]>0]
 =======
 
-    relevant_sigs = [c for i, c in enumerate(bla_protected.columns) if np.abs(bla_protected).sum(axis=0)[c]>0.2]
+    relevant_sigs = [c for i, c in enumerate(bla_protected.columns) if np.abs(bla_protected).sum(axis=0)[c]>0]
 
 >>>>>>> update code clonesig review
     relevant_sigs_clonal = [c for i, c in enumerate(bla_protected.columns) if input_df['clonal_{}'.format(c)].sum()>0]
