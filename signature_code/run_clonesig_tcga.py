@@ -40,7 +40,7 @@ cancer_loc = 'COADREAD'
 cosmic_type = 'ColoRect-AdenoCA'
 """
 
-tcga_folder = '20190704_TCGA'
+tcga_folder = '20200503_TCGA'
 
 cols = {'public': ['nb_caller', 'db_snp_status', 'exac_freq', '1000G_freq',
                    'COSMIC', 'PHENO', 'IMPACT', 'SIFT', 'PolyPhen',
@@ -96,10 +96,7 @@ MU = new_sig_matrix / new_sig_matrix.sum(axis=1)[:, np.newaxis]
 
 final_cols_used = [c for c in sig.columns if c in selected_sigs]
 
-if prefit:
-    model_selection_kws = {'factor': 0.048}
-else:
-    model_selection_kws = {'factor':  0.093}
+model_selection_kws = {'factor':  0.065}
 
 method = 'clonesig'
 id_list = list()
@@ -145,7 +142,7 @@ for i, folder_type in enumerate(['public', 'protected']):
     dof = sum(ev > EV_DOF_THRESHOLD)
 
     prop_diploid = len(snv_table[(snv_table.minor == 1) &
-                                 (snv_table.total_cn == 1)]) / len(snv_table)
+                                 (snv_table.total_cn == 2)]) / len(snv_table)
     ploidy = snv_table.ploidy.values[0]
 
     id_list.append([patient_id, folder_type, cancer_loc, cosmic_type,

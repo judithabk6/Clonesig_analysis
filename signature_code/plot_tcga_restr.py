@@ -104,13 +104,13 @@ color_dict['SBS45']= '#f0d0f2'
 color_dict['SBS46']= '#78aaff'
 color_dict['SBS47']= '#ffb108'
 color_dict['SBS49']= '#c108ff'
-color_dict['SBS52']= '#c27289'
+color_dict['SBS32']= '#c27289'
 color_dict['SBS54']= '#1320d1'
 color_dict['SBS56']= '#e8dba2'
 color_dict['SBS58']= '#b0eb31'
 color_dict['SBS59']= '#b8b8b8'
 
-tcga_folder = '20190704_TCGA'
+tcga_folder = '20200503_TCGA'
 
 
 signature_filename = 'data/sigProfiler_exome_SBS_signatures.csv'
@@ -137,7 +137,7 @@ final_cols_used = [c for c in sig.columns if c in selected_sigs]
 
 clonal_sigs = pd.DataFrame(index=[0, 1], columns=sig.columns[2:])
 subclonal_sigs = pd.DataFrame(index=[0, 1], columns=sig.columns[2:])
-for i, folder_type in enumerate(['public', 'protected']):
+for i, folder_type in enumerate(['protected']):
     with bz2.BZ2File('{}/{}/{}_clonesig_raw_results_restr_curated.bz2'.format(tcga_folder, patient_id, folder_type), 'rb') as est_pickle_file:
         est_pickle = pickle.Unpickler(est_pickle_file)
         new_est, lr, pval, cst_est, fitted_sigs = est_pickle.load()
@@ -203,76 +203,13 @@ for i, folder_type in enumerate(['public', 'protected']):
         nb_bins = min(_freedman_diaconis_bins(mut_table.vaf_purity) * 2, 50)
         final_bins = np.linspace(min(mut_table.vaf_purity), max(mut_table.vaf_purity), nb_bins)
         # fig, ax = plt.subplots(1, figsize=(8, 28), sharex=False, gridspec_kw={'hspace': 0.08, 'wspace': 0, 'height_ratios': [1, 6, 1]})
-        fig, ax = plt.subplots(1, figsize=(8, 5))
+
         clone_cols = sns.husl_palette(mut_table.clone.nunique(), l=0.8, s=.7)
         est_sigs = [s for s in selected_sigs if s in mut_table.signature.unique()]
         mylist = [color_dict[s] for s in est_sigs]
         my_palette = sns.color_palette(mylist)
         #cols = sns.color_palette("Set2", len(est_sigs))
         cols = sns.color_palette(my_palette, len(est_sigs))
-        for i in range(est.J):
-            sns.distplot(mut_table[mut_table.clone==i].vaf_purity, kde=False, label='clone {}'.format(i), rug=True, ax=ax, color=clone_cols[i], bins=final_bins)
-        ax.legend(bbox_to_anchor=(1.05, 0.5), loc=2, borderaxespad=0., fontsize=14)
-        plt.ylabel('count')
-        ax.invert_xaxis()
-        ax.set_xlim([1.5, 0])
-        ax.set_xlabel('Cancer Cell Fraction', fontsize=17)
-        ax.set_ylabel('Number of Mutations', fontsize=17)
-        ax.set_title(patient_id, fontsize=20)
-        plt.savefig('20190828_tcga_plots/{}_{}_clonesig_panel1.pdf'.format(patient_id, folder_type), bbox_inches='tight')
-        fig, ax = plt.subplots(1, figsize=(8, 18))
-        sns.scatterplot(x='vaf_purity', y='trinucleotide', data=mut_table,
-                             hue='signature',
-                             hue_order=[s for s in selected_sigs if s in mut_table.signature.unique()],
-                             palette=cols, s=110, marker='d', ax=ax)
-                             #hue='clone', palette=clone_cols, s=70, marker='d', ax=ax)
-        ax.legend(bbox_to_anchor=(1.05, 0.5), loc=2, borderaxespad=0., fontsize=14)
-        for i in range(96):
-            ax.axhline(i, ls=':', lw=0.5, color='gray')
-        for i in np.arange(-0.5, 96.5, 16):
-            ax.axhline(i, color='gray', lw=1.2)
-        ax.invert_xaxis()
-        ax.set_xlim([1.5, 0])
-        ax.set_ylim([-1, 96])
-
-        ax.set_yticks(range(96))
-        ax.get_yaxis().set_tick_params(direction='out', pad=18)
-        ax.set_yticklabels(['{}{}{}'.format(c[0], c[2], c[-1]) for c in PAT_LIST], fontsize=8, color='gray', ha='left')
-
-        axes2 = ax.twinx()   # mirror them
-        axes2.set_ylim([-1, 96])
-        axes2.set_yticks(np.arange(7.5, 96, 16))
-        axes2.get_yaxis().set_tick_params(length=0, pad=6)
-        _ = axes2.set_yticklabels(['C>A', 'C>G', 'C>T', 'T>A', 'T>C', 'T>G'], fontsize=15, color='gray', ha='left', rotation=90, va='center')
-        ax.set_xlabel('Cancer Cell Fraction', fontsize=17)
-        ax.set_ylabel('Trinucleotide context', fontsize=17)
-        ax.set_xlim([1.5, 0])
-        ax.set_title(patient_id, fontsize=20)
-        plt.savefig('20190828_tcga_plots/{}_{}_clonesig_panel2.pdf'.format(patient_id, folder_type), bbox_inches='tight')
-        
-        fig, ax = plt.subplots(1, figsize=(8, 5))
-        for i, present_sig in enumerate(est_sigs):
-            g=sns.kdeplot(mut_table[mut_table.signature==present_sig].vaf_purity, label=present_sig, ax=ax, color=cols[i])
-        for i, present_sig in enumerate(est_sigs):
-            dat = g.lines[i].get_xydata()
-            dat[:,1] = dat[:,1]*len(mut_table[mut_table.signature==present_sig])/len(mut_table)
-            g.lines[i].set_data(dat.T)
-        ax.set_ylim([0, 2])
-
-        for i in range(est.J):
-            g=sns.distplot(mut_table[mut_table.clone==i].vaf_purity, kde=False, label='clone {}'.format(i), ax=ax, color=clone_cols[i], bins=final_bins)
-        for jj in range(len(g.get_children())):
-            if isinstance(g.get_children()[jj], matplotlib.patches.Rectangle):
-                g.get_children()[jj].set_height(g.get_children()[jj].get_height()/(len(mut_table))*8)
-        ax.set_xlabel('Cancer Cell Fraction', fontsize=17)
-        ax.set_ylabel('Density', fontsize=17)
-        ax.legend(bbox_to_anchor=(1.05, 1.05), loc=2, borderaxespad=0., fontsize=14)
-        ax.invert_xaxis()
-        ax.set_xlim([1.5, 0])
-        ax.set_ylim([0, 2])
-        ax.set_title(patient_id, fontsize=20)
-        plt.savefig('20190828_tcga_plots/{}_{}_clonesig_panel3.pdf'.format(patient_id, folder_type), bbox_inches='tight')
-
 
         clone_cols = sns.husl_palette(mut_table.clone.nunique(), l=0.8, s=0.7)
         fig = plt.figure(figsize=(23, 10), dpi= 80)
@@ -364,7 +301,7 @@ for i, folder_type in enumerate(['public', 'protected']):
         ax_bottom.set_ylabel('Mutation\nCount', fontsize=23)
         _=axes3.set_xticks([])
 
-        plt.savefig('20190828_tcga_plots/{}_{}_clonesig_global.pdf'.format(patient_id, folder_type), bbox_inches='tight')
+        plt.savefig('20200519_tcga_plots/{}_{}_clonesig_global.pdf'.format(patient_id, folder_type), bbox_inches='tight')
 
 
 

@@ -17,16 +17,17 @@ from lifelines import KaplanMeierFitter
 from lifelines.plotting import add_at_risk_counts
 import collections
 from scipy.stats import chi2_contingency
+from pathlib import Path
 
 pd.options.display.max_columns = 200
-phd_folder_path = '/Users/JudithAbecassis/Documents/PhD'
-os.chdir('{}/TCGA_signatures'.format(phd_folder_path))
+output_path = '20200515_paper_figures/TCGA_results/heatmaps'
+Path(output_path).mkdir(parents=True, exist_ok=True)
 import warnings
 warnings.filterwarnings("ignore")
 
 
 
-clonesig_res = pd.read_csv('20190824_tcga_results_survival_restr.csv', sep='\t')
+clonesig_res = pd.read_csv('20200214_tcga_results_survival_restr.csv', sep='\t')
 
 
 
@@ -74,7 +75,7 @@ def plot_function_TCGA(loc, input_df, n_clusters):
     relevant_idx = input_df[input_df.pval<=0.05].index
     bla_protected[~bla_protected.index.isin(relevant_idx)] = 0
 
-    relevant_sigs = [c for i, c in enumerate(bla_protected.columns) if np.abs(bla_protected).sum(axis=0)[c]>0.2]
+    relevant_sigs = [c for i, c in enumerate(bla_protected.columns) if np.abs(bla_protected).sum(axis=0)[c]>0]
 
     relevant_sigs_clonal = [c for i, c in enumerate(bla_protected.columns) if input_df['clonal_{}'.format(c)].sum()>0]
     print(len(relevant_sigs), len(relevant_sigs_clonal))
@@ -121,7 +122,7 @@ def plot_function_TCGA(loc, input_df, n_clusters):
     g.cax.set_ylabel('signature change intensity', position=(0, 0.5), x=10)
     plt.setp(g.ax_heatmap.get_xticklabels(), rotation=70)
     g.ax_heatmap.set_xlabel('signatures')
-    g.ax_heatmap.set_ylabel('patients', labelpad=40*len(relevant_sigs))
+    g.ax_heatmap.set_ylabel('patients', labelpad=25*len(relevant_sigs))
     g.ax_heatmap.yaxis.set_label_position("left")
     g.ax_heatmap.text(-1.5, -1, letters[letter_idx], weight='bold')
     letter_idx = letter_idx + 1
@@ -161,7 +162,7 @@ def plot_function_TCGA(loc, input_df, n_clusters):
     #     data_key = Patch(color=kmeans_colordict[key], label=key)
     #     patchList.append(data_key)
     leg_list.append(g.ax_heatmap.legend(handles=patchList, loc=2, bbox_to_anchor=(1.4, 1), fontsize=2.7*len(relevant_sigs)))
-    plt.savefig('20190801_paper_figures/{}_heatmap.pdf'.format(loc), bbox_inches='tight')
+    plt.savefig('{}/{}_heatmap.pdf'.format(output_path, loc), bbox_inches='tight')
     
     final_figure_list = list()
     pval_list = list()
@@ -238,14 +239,14 @@ def plot_function_TCGA(loc, input_df, n_clusters):
     plt.setp(g.ax_heatmap.get_xticklabels(), rotation=70, ha='right', rotation_mode="anchor")
     g.ax_heatmap.set_xticklabels([item.get_text().split('_')[1] for item in g.ax_heatmap.get_xticklabels()])
     g.ax_heatmap.set_xlabel('signatures')
-    g.ax_heatmap.set_ylabel('patients', labelpad=70*len(relevant_sigs_clonal))
+    g.ax_heatmap.set_ylabel('patients', labelpad=35*len(relevant_sigs_clonal))
     g.ax_heatmap.yaxis.set_label_position("left")
     g.ax_heatmap.axvline(x=len(clonal_sigs), color='k')
     g.ax_heatmap.text(len(clonal_sigs)/3, -2, 'clonal', fontsize=6*len(relevant_sigs_clonal))
     g.ax_heatmap.text(len(clonal_sigs)*(1+1/3), -2, 'subclonal', fontsize=6*len(relevant_sigs_clonal))
     g.ax_heatmap.text(-1.5, -1, letters[letter_idx], fontsize=6*len(relevant_sigs_clonal), weight="bold")
     letter_idx = letter_idx + 1
-    plt.savefig('20190801_paper_figures/{}_heatmap_absolute_values.pdf'.format(loc), bbox_inches='tight')
+    plt.savefig('{}/{}_heatmap_absolute_values.pdf'.format(output_path, loc), bbox_inches='tight')
     
     nb_patients = len(input_df)
     nb_patients_sig = len(input_df[input_df.pval<=0.05])
@@ -255,13 +256,13 @@ def plot_function_TCGA(loc, input_df, n_clusters):
 
     print(r'\begin{figure}')
     print(r'\centering')
-    print(r'\includegraphics[height=0.4\textheight]{{figures/{}_heatmap.pdf}}'.format(loc))
+    print(r'\includegraphics[height=0.4\textheight]{{{}/{}_heatmap.pdf}}'.format(output_path, loc))
     cap_text = 'Panel a: Stratification of patients depending on their pattern of signature change for {} patients ({} patients, including {} with a significant signature change). The heatmap represents the difference between the signature activity in the largest subclone (in terms of number of mutations) and the clonal mutations (defined as belonging to the clone of highest CCF).'.format(loc, nb_patients, nb_patients_sig)
     # for i, fig_name in enumerate(final_figure_list):
     #     print(r'\includegraphics[height=0.15\textheight]{{figures/{}_{}.pdf}}'.format(loc, fig_name))
     #     cap_text += text_dict[fig_name].format(letters[i+1], np.round(pval_list[i], 4))
     # print('\n')
-    print(r'\includegraphics[height=0.35\textheight]{{figures/{}_heatmap_absolute_values.pdf}}'.format(loc))   
+    print(r'\includegraphics[height=0.35\textheight]{{{}/{}_heatmap_absolute_values.pdf}}'.format(output_path, loc))   
     cap_text += 'Panel {}: Stratification of patients depending on their complete pattern of signature exposure. The heatmap represents the signature activity in the largest subclone (in terms of number of mutations) and the clonal mutations (defined as belonging to the clone of highest CCF).'.format(letters[len(final_figure_list)+1], loc, nb_patients, nb_patients_sig)
     print('\caption{{{}}}'.format(cap_text))
     print('\label{{{}}}'.format(loc.lower()))
@@ -282,7 +283,7 @@ clinical_data = clinical_data.assign(staging_pt=clinical_data.PATH_T_STAGE.str[:
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
-sub_protected_chg = clonesig_res_acc[(clonesig_res_acc.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_acc[(clonesig_res_acc.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
@@ -291,7 +292,7 @@ sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', lef
 
 sns.set_style('white')
 sns.set_context('poster')
-plot_function_TCGA('ACC', sub_protected_chg_m, 2)
+plot_function_TCGA('ACC', sub_protected_chg, 2)
 
 
 
@@ -306,14 +307,14 @@ clinical_data = pd.read_csv('data_tcga_wes/BLCA/clinical/data_bcr_clinical_data_
 
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE, bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
-sub_protected_chg = clonesig_res_blca[(clonesig_res_blca.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_blca[(clonesig_res_blca.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[210]:
 
 
-plot_function_TCGA('BLCA', sub_protected_chg_m, 3)
+plot_function_TCGA('BLCA', sub_protected_chg, 3)
 
 
 
@@ -329,14 +330,14 @@ clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLOGIC_PT.str[:2])
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_brca[(clonesig_res_brca.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_brca[(clonesig_res_brca.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[212]:
 
 
-plot_function_TCGA('BRCA', sub_protected_chg_m, 3)
+plot_function_TCGA('BRCA', sub_protected_chg, 3)
 
 
 
@@ -350,12 +351,12 @@ clinical_data = pd.read_csv('data_tcga_wes/CESC/clinical/data_bcr_clinical_data_
 clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLOGIC_PT.str[:2])
 clinical_data = clinical_data.assign(staging_global=clinical_data.CLINICAL_STAGE.str.replace('B', '').str.replace('Stage ', '').str.replace('A', '').str.replace('1', '').str.replace('2', ''))
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE, bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_cesc[(clonesig_res_cesc.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_cesc[(clonesig_res_cesc.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 
-plot_function_TCGA('CESC', sub_protected_chg_m, 3)
+plot_function_TCGA('CESC', sub_protected_chg, 3)
 
 
 
@@ -369,14 +370,14 @@ clinical_data = pd.read_csv('data_tcga_wes/CHOL/clinical/data_bcr_clinical_data_
 clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLOGIC_PT.str[:2])
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE, bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_chol[(clonesig_res_chol.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_chol[(clonesig_res_chol.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[220]:
 
 
-plot_function_TCGA('CHOL', sub_protected_chg_m, 1)
+plot_function_TCGA('CHOL', sub_protected_chg, 1)
 
 
 
@@ -393,14 +394,14 @@ clinical_data = pd.read_csv('data_tcga_wes/COADREAD/clinical/data_bcr_clinical_d
 clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLOGIC_PT.str[:2])
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE, bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_coadread[(clonesig_res_coadread.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_coadread[(clonesig_res_coadread.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[224]:
 
 
-plot_function_TCGA('COADREAD', sub_protected_chg_m, 4)
+plot_function_TCGA('COADREAD', sub_protected_chg, 4)
 
 
 
@@ -417,14 +418,14 @@ clinical_data = pd.read_csv('data_tcga_wes/DLBC/clinical/data_bcr_clinical_data_
 #clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLOGIC_PT.str[:2])
 clinical_data = clinical_data.assign(staging_global=clinical_data.CLINICAL_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE, bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_dlbc[(clonesig_res_dlbc.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_dlbc[(clonesig_res_dlbc.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[226]:
 
 
-plot_function_TCGA('DLBC', sub_protected_chg_m, 2)
+plot_function_TCGA('DLBC', sub_protected_chg, 2)
 
 
 
@@ -439,14 +440,14 @@ clinical_data = pd.read_csv('data_tcga_wes/ESCA/clinical/data_bcr_clinical_data_
 clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLOGIC_PT.str[:2])
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE, bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_esca[(clonesig_res_esca.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_esca[(clonesig_res_esca.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[228]:
 
 
-plot_function_TCGA('ESCA', sub_protected_chg_m, 4)
+plot_function_TCGA('ESCA', sub_protected_chg, 4)
 
 
 
@@ -463,14 +464,14 @@ clinical_data = pd.read_csv('data_tcga_wes/GBM/clinical/data_bcr_clinical_data_p
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE, bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
 sub_protected_chg = clonesig_res_gbm[(clonesig_res_gbm.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
-sub_protected_chg = clonesig_res_gbm[(clonesig_res_gbm.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_gbm[(clonesig_res_gbm.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[230]:
 
 
-plot_function_TCGA('GBM', sub_protected_chg_m, 3)
+plot_function_TCGA('GBM', sub_protected_chg, 3)
 
 
 
@@ -485,14 +486,14 @@ clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLO
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_hnsc[(clonesig_res_hnsc.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_hnsc[(clonesig_res_hnsc.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[233]:
 
 
-plot_function_TCGA('HNSC', sub_protected_chg_m, 4)
+plot_function_TCGA('HNSC', sub_protected_chg, 4)
 
 
 
@@ -510,14 +511,14 @@ clinical_data = pd.read_csv('data_tcga_wes/KICH/clinical/data_bcr_clinical_data_
 clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLOGIC_PT.str[:2])
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE, bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_kich[(clonesig_res_kich.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_kich[(clonesig_res_kich.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[60]:
 
 
-plot_function_TCGA('KICH', sub_protected_chg_m, 3)
+plot_function_TCGA('KICH', sub_protected_chg, 3)
 
 
 
@@ -535,14 +536,14 @@ clinical_data = pd.read_csv('data_tcga_wes/KIRC/clinical/data_bcr_clinical_data_
 clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLOGIC_PT.str[:2])
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE, bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_kirc[(clonesig_res_kirc.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_kirc[(clonesig_res_kirc.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[236]:
 
 
-plot_function_TCGA('KIRC', sub_protected_chg_m, 3)
+plot_function_TCGA('KIRC', sub_protected_chg, 3)
 
 
 
@@ -561,14 +562,14 @@ clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLO
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_kirp[(clonesig_res_kirp.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_kirp[(clonesig_res_kirp.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[62]:
 
 
-plot_function_TCGA('KIRP', sub_protected_chg_m, 3)
+plot_function_TCGA('KIRP', sub_protected_chg, 3)
 
 
 
@@ -584,14 +585,14 @@ clinical_data = pd.read_csv('data_tcga_wes/LGG/clinical/data_bcr_clinical_data_p
 #clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_lgg[(clonesig_res_lgg.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_lgg[(clonesig_res_lgg.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[241]:
 
 
-plot_function_TCGA('LGG', sub_protected_chg_m, 1)
+plot_function_TCGA('LGG', sub_protected_chg, 1)
 
 
 # In[ ]:
@@ -611,14 +612,14 @@ clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLO
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_lihc[(clonesig_res_lihc.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_lihc[(clonesig_res_lihc.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[243]:
 
 
-plot_function_TCGA('LIHC', sub_protected_chg_m, 4)
+plot_function_TCGA('LIHC', sub_protected_chg, 4)
 
 
 
@@ -636,14 +637,14 @@ clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLO
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_luad[(clonesig_res_luad.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_luad[(clonesig_res_luad.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[245]:
 
 
-plot_function_TCGA('LUAD', sub_protected_chg_m, 4)
+plot_function_TCGA('LUAD', sub_protected_chg, 4)
 
 
 
@@ -662,14 +663,14 @@ clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLO
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_lusc[(clonesig_res_lusc.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_lusc[(clonesig_res_lusc.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[64]:
 
 
-plot_function_TCGA('LUSC', sub_protected_chg_m, 4)
+plot_function_TCGA('LUSC', sub_protected_chg, 4)
 
 
 
@@ -688,14 +689,14 @@ clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLO
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_meso[(clonesig_res_meso.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_meso[(clonesig_res_meso.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[252]:
 
 
-plot_function_TCGA('MESO', sub_protected_chg_m, 1)
+plot_function_TCGA('MESO', sub_protected_chg, 1)
 
 
 
@@ -713,14 +714,14 @@ clinical_data = pd.read_csv('data_tcga_wes/OV/clinical/data_bcr_clinical_data_pa
 clinical_data = clinical_data.assign(staging_global=clinical_data.CLINICAL_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_ov[(clonesig_res_ov.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_ov[(clonesig_res_ov.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[258]:
 
 
-plot_function_TCGA('OV', sub_protected_chg_m, 4)
+plot_function_TCGA('OV', sub_protected_chg, 4)
 
 
 
@@ -738,14 +739,14 @@ clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLO
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_paad[(clonesig_res_paad.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_paad[(clonesig_res_paad.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[260]:
 
 
-plot_function_TCGA('PAAD', sub_protected_chg_m, 2)
+plot_function_TCGA('PAAD', sub_protected_chg, 2)
 
 
 
@@ -763,14 +764,14 @@ clinical_data = pd.read_csv('data_tcga_wes/PCPG/clinical/data_bcr_clinical_data_
 #clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_pcpg[(clonesig_res_pcpg.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_pcpg[(clonesig_res_pcpg.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[66]:
 
 
-plot_function_TCGA('PCPG', sub_protected_chg_m, 1)
+plot_function_TCGA('PCPG', sub_protected_chg, 1)
 
 
 # ### PRAD
@@ -783,14 +784,14 @@ clinical_data = pd.read_csv('data_tcga_wes/PRAD/clinical/data_bcr_clinical_data_
 clinical_data = clinical_data.assign(staging_pt=clinical_data.CLIN_T_STAGE.str[:2])
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_prad[(clonesig_res_prad.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_prad[(clonesig_res_prad.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[279]:
 
 
-plot_function_TCGA('PRAD', sub_protected_chg_m, 2)
+plot_function_TCGA('PRAD', sub_protected_chg, 2)
 
 
 # In[ ]:
@@ -808,14 +809,14 @@ clonesig_res_sarc = clonesig_res[clonesig_res.cancer_loc_x=='SARC'].reset_index(
 clinical_data = pd.read_csv('data_tcga_wes/SARC/clinical/data_bcr_clinical_data_patient.txt', sep='\t', skiprows=4)
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_sarc[(clonesig_res_sarc.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_sarc[(clonesig_res_sarc.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[10]:
 
 
-plot_function_TCGA('SARC', sub_protected_chg_m, 3)
+plot_function_TCGA('SARC', sub_protected_chg, 3)
 
 
 # In[ ]:
@@ -835,14 +836,14 @@ clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLO
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_skcm[(clonesig_res_skcm.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_skcm[(clonesig_res_skcm.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[13]:
 
 
-plot_function_TCGA('SKCM', sub_protected_chg_m, 4)
+plot_function_TCGA('SKCM', sub_protected_chg, 4)
 
 
 
@@ -860,14 +861,14 @@ clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLO
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_stad[(clonesig_res_stad.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_stad[(clonesig_res_stad.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[15]:
 
 
-plot_function_TCGA('STAD', sub_protected_chg_m, 3)
+plot_function_TCGA('STAD', sub_protected_chg, 3)
 
 
 
@@ -883,14 +884,14 @@ clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLO
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_tgct[(clonesig_res_tgct.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_tgct[(clonesig_res_tgct.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[21]:
 
 
-plot_function_TCGA('TGCT', sub_protected_chg_m, 1)
+plot_function_TCGA('TGCT', sub_protected_chg, 1)
 
 
 # In[ ]:
@@ -910,14 +911,14 @@ clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLO
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_thca[(clonesig_res_thca.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_thca[(clonesig_res_thca.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[26]:
 
 
-plot_function_TCGA('THCA', sub_protected_chg_m, 1)
+plot_function_TCGA('THCA', sub_protected_chg, 1)
 
 
 
@@ -930,14 +931,14 @@ clonesig_res_thym = clonesig_res[clonesig_res.cancer_loc_x=='THYM'].reset_index(
 clinical_data = pd.read_csv('data_tcga_wes/THYM/clinical/data_bcr_clinical_data_patient.txt', sep='\t', skiprows=4)
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_thym[(clonesig_res_thym.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_thym[(clonesig_res_thym.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[31]:
 
 
-plot_function_TCGA('THYM', sub_protected_chg_m, 2)
+plot_function_TCGA('THYM', sub_protected_chg, 2)
 
 
 
@@ -951,14 +952,14 @@ clinical_data = pd.read_csv('data_tcga_wes/UCEC/clinical/data_bcr_clinical_data_
 clinical_data = clinical_data.assign(staging_global=clinical_data.CLINICAL_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_ucec[(clonesig_res_ucec.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_ucec[(clonesig_res_ucec.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[35]:
 
 
-plot_function_TCGA('UCEC', sub_protected_chg_m, 3)
+plot_function_TCGA('UCEC', sub_protected_chg, 3)
 
 
 
@@ -972,14 +973,14 @@ clinical_data = pd.read_csv('data_tcga_wes/UCS/clinical/data_bcr_clinical_data_p
 clinical_data = clinical_data.assign(staging_global=clinical_data.CLINICAL_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', '').str.replace('2', '').str.replace('1', ''))
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_ucs[(clonesig_res_ucs.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_ucs[(clonesig_res_ucs.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[44]:
 
 
-plot_function_TCGA('UCS', sub_protected_chg_m, 1)
+plot_function_TCGA('UCS', sub_protected_chg, 1)
 
 
 
@@ -994,14 +995,14 @@ clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLO
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
 clinical_data.loc[clinical_data.AGE=='[Not Available]', 'AGE'] = np.nan
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE.astype(float), bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
-sub_protected_chg = clonesig_res_uvm[(clonesig_res_uvm.mutation_set=='protected')]#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
+sub_protected_chg = clonesig_res_uvm[(clonesig_res_uvm.mutation_set=='protected')].reset_index()#&(clonesig_res.nb_mut>200)&(clonesig_res.purity>0.4)]
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
 # In[48]:
 
 
-plot_function_TCGA('UVM', sub_protected_chg_m, 1)
+plot_function_TCGA('UVM', sub_protected_chg, 1)
 
 clonesig_res.pivot_table(index='cancer_loc_x', columns='mutation_set', values='nb_mut', agg_func='mean')
 clonesig_res.groupby('cancer_loc_x').agg({'a':['sum', 'max'], 

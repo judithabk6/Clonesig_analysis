@@ -15,7 +15,7 @@ cancer_type = int(sys.argv[3])
 perc_dip = float(sys.argv[4]) / 100
 nb_seed = int(sys.argv[5])
 
-output_dir = '20190610_estimate_likelihood_test_statistics'
+output_dir = '20200216_estimate_likelihood_test_statistics'
 safe_mkdir(output_dir)
 
 '''
@@ -26,7 +26,7 @@ cancer_type=2
 perc_dip=0.2
 '''
 sig_file_path = 'external_data/sigProfiler_SBS_signatures_2018_03_28.csv'
-cancer_type_sig_filename = 'external_data/match_cancer_type_sig_v3.csv'
+cancer_type_sig_filename = 'external_data/curated_match_signature_cancertype_tcgawes_literature.csv'
 
 # open the matrix describing the signatures
 SIG = pd.read_csv(sig_file_path)
@@ -36,9 +36,10 @@ NEW_SIG_MATRIX = SIG_MATRIX + 10**-20 * (SIG_MATRIX == 0)
 MU = NEW_SIG_MATRIX / NEW_SIG_MATRIX.sum(axis=1)[:, np.newaxis]
 
 # get the signatures specific of the cancer type
-cancer_type_sig = pd.read_csv(cancer_type_sig_filename, index_col=0).values
-select = cancer_type_sig[cancer_type, :]
+cancer_type_sig = pd.read_csv(cancer_type_sig_filename, sep='\t', index_col=0).values
+select = cancer_type_sig[:, cancer_type]
 subMU = MU[select.astype(bool), :]
+MU = MU[cancer_type_sig.sum(axis=1).astype(bool), :]
 
 # simulate pi
 nb_active_sig = np.min((np.random.poisson(7) + 1, subMU.shape[0]))
@@ -70,23 +71,22 @@ uu._get_unobserved_nodes()
 uu._get_observed_nodes()
 
 
-
 sc_est_subMU = Estimator(uu.T, uu.B, uu.C_normal, uu.C_tumor_tot,
                          uu.C_tumor_minor, uu.D, uu.purity, 1,
                          inputMU=subMU)
 sc_est_subMU.fit()
 est_subMU = Estimator(uu.T, uu.B, uu.C_normal, uu.C_tumor_tot,
-                         uu.C_tumor_minor, uu.D, uu.purity, nb_clones,
-                         inputMU=subMU)
+                      uu.C_tumor_minor, uu.D, uu.purity, nb_clones,
+                      inputMU=subMU)
 est_subMU.fit()
 
 sc_est_MU = Estimator(uu.T, uu.B, uu.C_normal, uu.C_tumor_tot,
-                         uu.C_tumor_minor, uu.D, uu.purity, 1,
-                         inputMU=MU)
+                      uu.C_tumor_minor, uu.D, uu.purity, 1,
+                      inputMU=MU)
 sc_est_MU.fit()
 est_MU = Estimator(uu.T, uu.B, uu.C_normal, uu.C_tumor_tot,
-                         uu.C_tumor_minor, uu.D, uu.purity, nb_clones,
-                         inputMU=MU)
+                   uu.C_tumor_minor, uu.D, uu.purity, nb_clones,
+                   inputMU=MU)
 est_MU.fit()
 
 loglikelihood_subMU = est_subMU.get_loglikelihood

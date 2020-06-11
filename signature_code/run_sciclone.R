@@ -21,8 +21,16 @@ folder_path <- opt$folder
 
 cnv_file = read.table(paste(folder_path, 'cnv_table.csv', sep='/'), sep='\t', header=TRUE)
 cnv_file$total_cn = cnv_file$major + cnv_file$minor
-cnv_to_use = cnv_file[,c('chromosome', 'start', 'end', 'total_cn')]
-tt = read.table(paste(folder_path, 'input_t.tsv', sep='/'), sep='\t', header=TRUE)
+if ("chromosome" %in% colnames(cnv_file)) {
+    cnv_to_use = cnv_file[,c('chromosome', 'start', 'end', 'total_cn')]
+} else {
+    cnv_file$chromosome = cnv_file$chr
+    cnv_file$start = cnv_file$startpos
+    cnv_file$end = cnv_file$endpos
+    cnv_file$total_cn = cnv_file$major_cn + cnv_file$minor_cn
+    cnv_to_use = cnv_file[,c('chromosome', 'start', 'end', 'total_cn')]
+}
+tt = read.table(paste(folder_path, 'input_t.tsv', sep='/'), sep='\t', header=TRUE, comment.char='@')
 tt$vaf = tt$var_counts/(tt$var_counts + tt$ref_counts) * 100
 gg = tt[,c('chromosome', 'position', 'ref_counts', 'var_counts', 'vaf')]
 gg$position = as.numeric(as.character(gg$position))

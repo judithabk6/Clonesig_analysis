@@ -34,9 +34,11 @@ MU_table = read.table("external_data/sigProfiler_SBS_signatures_2018_03_28.csv",
 MU = MU_table[, 3:dim(MU_table)[2]]
 
 # get cancer signature match
-cancer_type_sig = read.table("external_data/match_cancer_type_sig_v3.csv", sep=',', header=TRUE)
-select = cancer_type_sig[cancer_type + 1, -1]
+cancer_type_sig = read.table("external_data/curated_match_signature_cancertype_tcgawes_literature.csv", sep='\t', header=TRUE, row.names=1)
+select = cancer_type_sig[, cancer_type + 1]
 subMU = MU[,select==1]
+bigselect = rowSums(cancer_type_sig)
+MU = MU[,bigselect>=1]
 
 # load data (inspired from the tracksig package)
 vcfFile <- paste(folder_path, 'tracksig', 'batch_100_pattern96.csv', sep='/')

@@ -26,7 +26,7 @@ seed_job = 4
 '''
 
 sig_file_path = 'external_data/sigProfiler_SBS_signatures_2018_03_28.csv'
-cancer_type_sig_filename = 'external_data/match_cancer_type_sig_v3.csv'
+cancer_type_sig_filename = 'external_data/curated_match_signature_cancertype_tcgawes_literature.csv'
 
 # open the matrix describing the signatures
 SIG = pd.read_csv(sig_file_path)
@@ -36,14 +36,15 @@ NEW_SIG_MATRIX = SIG_MATRIX + 10**-20 * (SIG_MATRIX == 0)
 MU = NEW_SIG_MATRIX / NEW_SIG_MATRIX.sum(axis=1)[:, np.newaxis]
 
 # get the signatures specific of the cancer type
-cancer_type_sig = pd.read_csv(cancer_type_sig_filename, index_col=0).values
-select = cancer_type_sig[cancer_type, :]
+cancer_type_sig = pd.read_csv(cancer_type_sig_filename, sep='\t', index_col=0).values
+select = cancer_type_sig[:, cancer_type]
 subMU = MU[select.astype(bool), :]
+
 
 THRESHOLD = 0.05
 
 
-expname = '20190729_simulations_clonesig_cn_cancer_type'
+expname = '20200229_simulations_clonesig_cn_cancer_type'
 safe_mkdir(expname)
 np.random.seed(seed_job)
 
@@ -81,7 +82,10 @@ uu.write_clonesig(foldername)
 uu.write_pyclone_sciclone_ccube(foldername)
 uu.write_deconstructsig(foldername)
 uu.write_tracksig(foldername)
+uu.write_tracksigfreq(foldername)
 uu.write_palimpsest(foldername)
+uu.write_dpclust(foldername)
+uu.write_phylogicndt(foldername)
 uu.write_object(foldername)
 
 

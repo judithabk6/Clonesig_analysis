@@ -28,7 +28,7 @@ nb_clones = int(folder_path.split('/')[1].split('nb_clones')[1].split('-')[0])
 nb_mut = int(folder_path.split('/')[1].split('nb_mut')[1].split('-')[0])
 
 sig_file_path = 'external_data/sigProfiler_SBS_signatures_2018_03_28.csv'
-cancer_type_sig_filename = 'external_data/match_cancer_type_sig_v3.csv'
+cancer_type_sig_filename = 'external_data/curated_match_signature_cancertype_tcgawes_literature.csv'
 
 # open the matrix describing the signatures
 SIG = pd.read_csv(sig_file_path)
@@ -38,10 +38,10 @@ NEW_SIG_MATRIX = SIG_MATRIX + 10**-20 * (SIG_MATRIX == 0)
 MU = NEW_SIG_MATRIX / NEW_SIG_MATRIX.sum(axis=1)[:, np.newaxis]
 
 # get the signatures specific of the cancer type
-cancer_type_sig = pd.read_csv(cancer_type_sig_filename, index_col=0).values
-select = cancer_type_sig[cancer_type, :]
+cancer_type_sig = pd.read_csv(cancer_type_sig_filename, sep='\t', index_col=0).values
+select = cancer_type_sig[:, cancer_type]
 subMU = MU[select.astype(bool), :]
-
+MU = MU[cancer_type_sig.sum(axis=1).astype(bool), :]
 
 def fit_model_special(T, B, C_normal, C_tumor_tot, C_tumor_minor, D, purity,
                       inputMU, nb_fits=1, seeds=None, max_nb_clones=6, extra=4):
@@ -139,7 +139,7 @@ with open('{}/purity.txt'.format(folder_path), 'r') as f:
 with open('{}/sim_data'.format(folder_path), 'rb') as sim_pickle_file:
     sim_pickle = pickle.Unpickler(sim_pickle_file)
     sim_data_obj = sim_pickle.load()
-dist_matrix = sp.spatial.distance.squareform(sp.spatial.distance.pdist(sim_data_obj.true_pi.dot(sim_data_obj.MU), 'cosine'))
+dist_matrix = sp.spatial.distance.squareform(sp.spatial.distance.pdist(sim_data_obj.pi.dot(sim_data_obj.MU), 'cosine'))
 if len(dist_matrix[dist_matrix > 0]):
     min_dist = np.min(dist_matrix[dist_matrix > 0])
     max_dist = np.max(dist_matrix[dist_matrix > 0])
