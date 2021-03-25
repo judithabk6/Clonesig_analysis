@@ -220,7 +220,6 @@ mkdir -p logs/20201011_fix_eval
 qsub -t 10-2942%55 -N 20201011_fix_eval -q batch -d $PWD -l walltime=1:00:00,mem=15gb,nodes=1:ppn=1 -o logs/20201011_fix_eval -e logs/20201011_fix_eval -v INPUT_FILE=20201011_fix_eval.csv signature_code/fix_evaluate.sh
 
 
-
 mkdir -p logs/2020420_big_run_pyclone_cst
 qsub -t 1-396%90 -N 2020420_big_run_pyclone_cst -q batch -d $PWD -l walltime=96:00:00,mem=5gb,nodes=1:ppn=1 -o logs/2020420_big_run_pyclone_cst -e logs/2020308_big_run_pyclone -v INPUT_FILE=2020308_big_run_pyclone.csv signature_code/run_pyclone.sh
 
