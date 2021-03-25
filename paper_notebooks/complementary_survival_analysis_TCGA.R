@@ -22,3 +22,8 @@ m = summary(mod1)
 cap = paste('Cox model for ', m$n, ' of the protected TCGA cohort, with ', m$nevent, ' events, censured at 15 years.', sep='')
 df = m$coefficients
 print(xtable(df, caption=cap, type='latex', display=c('f', 'f', 'f', 'f', 'f', 'e')), sanitize.rownames.function = bold, sanitize.colnames.function = bold)
+
+
+
+mod1 = coxph(Surv(survival_months_15y, binary_vital_status_15y) ~ group + strata(cancer_loc_x), data=clonesig_res)
+
