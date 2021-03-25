@@ -277,6 +277,37 @@ big_table2 = pd.concat(tables, axis=0)
 big_table2.to_csv('20200525_dream_results.csv', sep='\t', index=False)      
 
 
+phylo500_path = 'PhylogicNDT500'
+inp = pd.read_csv('20200830_phylo500_run.csv', header=None, names=['idx', 'samplename'])
+tables = list()
+non_working = list()
+for index, row in inp.iterrows():
+    for suffix in ('cst', 'var'):
+        try:
+            res_df = pd.read_csv('{}/{}_{}/result_evaluation_phylo500_new.csv'.format(phylo500_path, row.samplename, suffix), sep='\t')
+            tables.append(res_df)
+        except FileNotFoundError:
+            print(index+1, row.samplename, suffix)
+            non_working.append(index + 1)
+big_table2 = pd.concat(tables, axis=0)
+big_table2.to_csv('20201011_phylo500_results.csv', sep='\t', index=False)      
+
+
+simclone1000_path = 'SimClone1000'
+inp = pd.read_csv('20200916_simclone1000_run.csv', header=None, names=['idx', 'samplename'])
+tables = list()
+non_working = list()
+for index, row in inp.iterrows():
+    for suffix in ('cst', 'var'):
+        #input_table = pd.read_csv('{}/{}_{}/input_t.tsv'.format(simclone1000_path, row.idx, suffix), sep='\t')
+        try:
+            res_df = pd.read_csv('{}/{}_{}/result_evaluation_simclone1000_new.csv'.format(simclone1000_path, row.idx, suffix), sep='\t')
+            tables.append(res_df)
+        except FileNotFoundError:
+            print(index+1, row.idx, suffix)
+            non_working.append(index + 1)
+big_table2 = pd.concat(tables, axis=0)
+big_table2.to_csv('20201011_simclone1000_results.csv', sep='\t', index=False)      
 
 
 

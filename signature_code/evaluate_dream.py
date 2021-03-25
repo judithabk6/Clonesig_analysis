@@ -17,7 +17,7 @@ import bz2
 
 
 MIXTURE_THRESHOLD = 0.05
-folder_path = sys.argv[1]
+
 
 """
 folder_path = 'salcedo_dream_challenge/T2_8X'
@@ -544,126 +544,127 @@ method_function_dict = {'pyclone': format_pyclone, 'sciclone': format_sciclone,
                         'tracksig': format_tracksig,
                         'tracksigfreq': format_tracksigfreq}
 
+if __name__ == '__main__':
+    folder_path = sys.argv[1]
+    (J_true, phi_true_values, weights_true, true_cluster_assign, true_subclonal,
+     sig_profile_1A, sig_profile_1B, true_signatures, true_profile_1E) = \
+        format_truth(folder_path)
 
-(J_true, phi_true_values, weights_true, true_cluster_assign, true_subclonal,
- sig_profile_1A, sig_profile_1B, true_signatures, true_profile_1E) = \
-    format_truth(folder_path)
+    tumor = folder_path.split('/')[1].split('_')[0]
+    depth = folder_path.split('/')[1].split('_')[1]
 
-tumor = folder_path.split('/')[1].split('_')[0]
-depth = folder_path.split('/')[1].split('_')[1]
+    f = open('data/salcedo_dream_challenge/MuTect_truth/MuTect_{}.T.{}.truth.1A.txt'.format(tumor, depth), 'r')
+    true_purity = float(f.readline().strip())
+    perc_dip = 0 # jfkdjf
 
-f = open('data/salcedo_dream_challenge/MuTect_truth/MuTect_{}.T.{}.truth.1A.txt'.format(tumor, depth), 'r')
-true_purity = float(f.readline().strip())
-perc_dip = 0 # jfkdjf
+    cnv_filename = 'data/salcedo_dream_challenge/MuTect_inputs/{}-{}_refit_subclones_noXY.txt'.format(tumor, depth)
+    cnv_table = pd.read_csv(cnv_filename, sep='\t')
 
-cnv_filename = 'data/salcedo_dream_challenge/MuTect_inputs/{}-{}_refit_subclones_noXY.txt'.format(tumor, depth)
-cnv_table = pd.read_csv(cnv_filename, sep='\t')
-
-def get_major_minor(x):
-    if x.frac1_A==1:
-        return pd.Series([x.nMaj1_A, x.nMin1_A])
-    else:
-        if x.frac1_A > x.frac2_A:
+    def get_major_minor(x):
+        if x.frac1_A==1:
             return pd.Series([x.nMaj1_A, x.nMin1_A])
         else:
-            return pd.Series([x.nMaj2_A, x.nMin2_A])
+            if x.frac1_A > x.frac2_A:
+                return pd.Series([x.nMaj1_A, x.nMin1_A])
+            else:
+                return pd.Series([x.nMaj2_A, x.nMin2_A])
 
-new_data = cnv_table.apply(get_major_minor, axis=1)
-new_data.columns = ['major_cn', 'minor_cn']
-cnv_final = pd.concat((cnv_table[['chr', 'startpos', 'endpos']],
-                       new_data.astype(int)), axis=1)
-cnv_final = cnv_final.assign(weight=cnv_final.endpos - cnv_final.startpos)
-perc_dip = cnv_final[(cnv_final.major_cn==1)&(cnv_final.minor_cn==1)].weight.sum() / cnv_final.weight.sum()
+    new_data = cnv_table.apply(get_major_minor, axis=1)
+    new_data.columns = ['major_cn', 'minor_cn']
+    cnv_final = pd.concat((cnv_table[['chr', 'startpos', 'endpos']],
+                           new_data.astype(int)), axis=1)
+    cnv_final = cnv_final.assign(weight=cnv_final.endpos - cnv_final.startpos)
+    perc_dip = cnv_final[(cnv_final.major_cn==1)&(cnv_final.minor_cn==1)].weight.sum() / cnv_final.weight.sum()
 
-df_list = list()
-df_cols = ['tumor', 'depth', 'nb_mut', 'true_nb_clones', 'true_purity',
-           'perc_dip', 'fitted_nb_clones', 'll_ratio', 'pval', 'score1B',
-           'score1C', 'score2A', 'score2C_auc', 'score2C_accuracy',
-           'score2C_sensitivity', 'score2C_specificity', 'score2C_precision',
-           'score_sig_1A', 'score_sig_1B', 'score_sig_1C_auc',
-           'score_sig_1C_accuracy', 'score_sig_1C_sensitivity',
-           'score_sig_1C_specificity', 'score_sig_1C_precision',
-           'min_diff_distrib_mut', 'max_diff_distrib_mut',
-           'std_diff_distrib_mut', 'median_diff_distrib_mut', 'perc_dist_5',
-           'perc_dist_10', 'runtime', 'method', 'setting']
-for method, setting in method_setting_list:
-    print(method, setting)
-    row_list = list()
-    row_list.append(tumor)
-    row_list.append(depth)
-    row_list.append(len(true_cluster_assign))
-    row_list.append(J_true)
-    row_list.append(true_purity)
-    row_list.append(perc_dip)
-    (ll_ratio, pval, J_pred, phi_pred_values, weights_pred,
-     pred_cluster_assign, pred_subclonal, pred_profile, pred_signatures,
-     est_dist, runtime) = \
-        method_function_dict[method](folder_path, setting)
-    row_list.append(J_pred)
-    row_list.append(ll_ratio)
-    row_list.append(pval)
-    if J_pred is not None:
-        row_list.append(score1B_base(J_true, J_pred))
-    else:
-        row_list.append(np.nan)
-    if phi_pred_values is not None:
-        row_list.append(score1C_base(phi_true_values, phi_pred_values,
-                                     weights_true, weights_pred))
-    else:
-        row_list.append(np.nan)
-    if pred_cluster_assign is not None:
-        ordered_table = pd.merge(pred_cluster_assign, true_cluster_assign,
-                                 on='mutation_id', how='inner')
-        if len(true_cluster_assign)<20000:
-            row_list.append(score2A_base(ordered_table.true_cluster_id,
-                                         ordered_table.pred_cluster_id))
+    df_list = list()
+    df_cols = ['tumor', 'depth', 'nb_mut', 'true_nb_clones', 'true_purity',
+               'perc_dip', 'fitted_nb_clones', 'll_ratio', 'pval', 'score1B',
+               'score1C', 'score2A', 'score2C_auc', 'score2C_accuracy',
+               'score2C_sensitivity', 'score2C_specificity', 'score2C_precision',
+               'score_sig_1A', 'score_sig_1B', 'score_sig_1C_auc',
+               'score_sig_1C_accuracy', 'score_sig_1C_sensitivity',
+               'score_sig_1C_specificity', 'score_sig_1C_precision',
+               'min_diff_distrib_mut', 'max_diff_distrib_mut',
+               'std_diff_distrib_mut', 'median_diff_distrib_mut', 'perc_dist_5',
+               'perc_dist_10', 'runtime', 'method', 'setting']
+    for method, setting in method_setting_list:
+        print(method, setting)
+        row_list = list()
+        row_list.append(tumor)
+        row_list.append(depth)
+        row_list.append(len(true_cluster_assign))
+        row_list.append(J_true)
+        row_list.append(true_purity)
+        row_list.append(perc_dip)
+        (ll_ratio, pval, J_pred, phi_pred_values, weights_pred,
+         pred_cluster_assign, pred_subclonal, pred_profile, pred_signatures,
+         est_dist, runtime) = \
+            method_function_dict[method](folder_path, setting)
+        row_list.append(J_pred)
+        row_list.append(ll_ratio)
+        row_list.append(pval)
+        if J_pred is not None:
+            row_list.append(score1B_base(J_true, J_pred))
         else:
             row_list.append(np.nan)
-        ordered_table = pd.merge(pred_subclonal, true_subclonal,
-                                 on='mutation_id', how='inner')
-        auc, accuracy, sensitivity, specificity, precision = \
-            score2C_base(ordered_table.true_subclonal,
-                         ordered_table.pred_subclonal)
-        for v in (auc, accuracy, sensitivity, specificity, precision):
-            row_list.append(v)
-    else:
-        for i in range(6):
-            row_list.append(np.nan)
-    if pred_profile is not None:
-        row_list.append(score_sig_1A_base(sig_profile_1A, pred_profile))
-        row_list.append(score_sig_1B_base(sig_profile_1B, pred_profile))
-        auc, accuracy, sensitivity, specificity, precision = \
-            score_sig_1C_base(true_signatures, pred_signatures)
-        for v in (auc, accuracy, sensitivity, specificity, precision):
-            row_list.append(v)
-        if method == 'deconstructsigs':
-            nb_rows = min(est_dist.shape[0], true_profile_1E.shape[0])
-            (min_diff_distrib_mut, max_diff_distrib_mut, std_diff_distrib_mut,
-             median_diff_distrib_mut, perc_dist_5, perc_dist_10) = \
-                score_sig_1E_base(true_profile_1E[0:nb_rows, :],
-                                  est_dist[0:nb_rows, :])
+        if phi_pred_values is not None:
+            row_list.append(score1C_base(phi_true_values, phi_pred_values,
+                                         weights_true, weights_pred))
         else:
-            ok_ids = ordered_table.mutation_id.values
-            true_filter = (true_subclonal.mutation_id.isin(ok_ids)).values
-            pred_filter = (pred_subclonal.mutation_id.isin(ok_ids)).values
-            (min_diff_distrib_mut, max_diff_distrib_mut, std_diff_distrib_mut,
-             median_diff_distrib_mut, perc_dist_5, perc_dist_10) = \
-                score_sig_1E_base(true_profile_1E[true_filter, :],
-                                  est_dist[pred_filter, :].astype(float))
-        for v in (min_diff_distrib_mut, max_diff_distrib_mut,
-                  std_diff_distrib_mut, median_diff_distrib_mut,
-                  perc_dist_5, perc_dist_10):
-            row_list.append(v)
-    else:
-        for i in range(13):
             row_list.append(np.nan)
-    row_list.append(runtime)
-    row_list.append(method)
-    row_list.append(setting)
-    df_list.append(row_list)
-res_df = pd.DataFrame(df_list, columns=df_cols)
-res_df.to_csv('{}/result_evaluation_dream_new.csv'.format(folder_path),
-              sep='\t', index=False)
+        if pred_cluster_assign is not None:
+            ordered_table = pd.merge(pred_cluster_assign, true_cluster_assign,
+                                     on='mutation_id', how='inner')
+            if len(true_cluster_assign)<20000:
+                row_list.append(score2A_base(ordered_table.true_cluster_id,
+                                             ordered_table.pred_cluster_id))
+            else:
+                row_list.append(np.nan)
+            ordered_table = pd.merge(pred_subclonal, true_subclonal,
+                                     on='mutation_id', how='inner')
+            auc, accuracy, sensitivity, specificity, precision = \
+                score2C_base(ordered_table.true_subclonal,
+                             ordered_table.pred_subclonal)
+            for v in (auc, accuracy, sensitivity, specificity, precision):
+                row_list.append(v)
+        else:
+            for i in range(6):
+                row_list.append(np.nan)
+        if pred_profile is not None:
+            row_list.append(score_sig_1A_base(sig_profile_1A, pred_profile))
+            row_list.append(score_sig_1B_base(sig_profile_1B, pred_profile))
+            auc, accuracy, sensitivity, specificity, precision = \
+                score_sig_1C_base(true_signatures, pred_signatures)
+            for v in (auc, accuracy, sensitivity, specificity, precision):
+                row_list.append(v)
+            if method == 'deconstructsigs':
+                nb_rows = min(est_dist.shape[0], true_profile_1E.shape[0])
+                (min_diff_distrib_mut, max_diff_distrib_mut, std_diff_distrib_mut,
+                 median_diff_distrib_mut, perc_dist_5, perc_dist_10) = \
+                    score_sig_1E_base(true_profile_1E[0:nb_rows, :],
+                                      est_dist[0:nb_rows, :])
+            else:
+                ok_ids = ordered_table.mutation_id.values
+                true_filter = (true_subclonal.mutation_id.isin(ok_ids)).values
+                pred_filter = (pred_subclonal.mutation_id.isin(ok_ids)).values
+                (min_diff_distrib_mut, max_diff_distrib_mut, std_diff_distrib_mut,
+                 median_diff_distrib_mut, perc_dist_5, perc_dist_10) = \
+                    score_sig_1E_base(true_profile_1E[true_filter, :],
+                                      est_dist[pred_filter, :].astype(float))
+            for v in (min_diff_distrib_mut, max_diff_distrib_mut,
+                      std_diff_distrib_mut, median_diff_distrib_mut,
+                      perc_dist_5, perc_dist_10):
+                row_list.append(v)
+        else:
+            for i in range(13):
+                row_list.append(np.nan)
+        row_list.append(runtime)
+        row_list.append(method)
+        row_list.append(setting)
+        df_list.append(row_list)
+    res_df = pd.DataFrame(df_list, columns=df_cols)
+    res_df.to_csv('{}/result_evaluation_dream_new.csv'.format(folder_path),
+                  sep='\t', index=False)
 
 
 
