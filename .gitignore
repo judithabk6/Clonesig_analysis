@@ -105,6 +105,7 @@ venv.bak/
 
 # results and data
 *.csv
+!result_tables/*.csv
 results/
 *simulation*
 .DS_Store
