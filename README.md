@@ -28,6 +28,9 @@ this project uses many packages. Here is a list of the most important ones. Requ
 - [palimpsest](https://github.com/FunGeST/Palimpsest)
 - [CloneSig](https://github.com/judithabk6/clonesig)
 - [deconstructSigs 9bbaf15387](https://github.com/raerose01/deconstructSigs/tree/9bbaf15387e1a6221b4437523d12dd950eea80e1)
+- [TrackSigFreq 23b2f3f](https://github.com/morrislab/TrackSigFreq/tree/23b2f3f75b344d18d1df6817f3492f8b80047500)
+- [DPClust](https://github.com/Wedge-lab/dpclust/tree/75f5d7ef1e3e53585f86801fde76dd4c4aa86324)
+- [PhylogicNDT c229cec](https://github.com/broadinstitute/PhylogicNDT/tree/c229cec570169b6e710e9157c9e102ce37a454cd
 
 
 ##### statistical packages
