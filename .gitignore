@@ -105,5 +105,14 @@ venv.bak/
 
 # results and data
 *.csv
+!result_tables/*.csv
 results/
 *simulation*
+.DS_Store
+data
+20200515_paper_figures
+20200519_tcga_plots
+pcawg_download
+salcedo_dream_challenge
+salcedo_dream_challenge_bkp
+signature_code_bkp

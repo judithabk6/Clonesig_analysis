@@ -177,6 +177,66 @@ done
 mkdir -p logs/20200415_dream_run
 qsub -t 1-25 -N 20200415_dream_run -q batch -d $PWD -l walltime=120:00:00,mem=10gb,nodes=1:ppn=1 -o logs/20200415_dream_run -e logs/20200415_dream_run -v INPUT_FILE=20200415_dream_run.csv signature_code/run_all_methods_dream.sh
 
+# evaluation on the phylo500 dataset
+rm -f 20200830_phylo500_run.csv
+j=1
+for s in {1..500}; do
+echo $j,"Sim_500_${s}" >> 20200830_phylo500_run.csv
+j=$((j+1)); 
+done
+mkdir -p logs/20200830_phylo500_run
+qsub -t 1-10 -N 20200830_phylo500_run -q batch -d $PWD -l walltime=150:00:00,mem=5gb,nodes=1:ppn=1 -o logs/20200830_phylo500_run -e logs/20200830_phylo500_run -v INPUT_FILE=20200830_phylo500_run.csv signature_code/run_all_methods_phylo500.sh
+qsub -t 11-500 -N 20200830_phylo500_run -q batch -d $PWD -l walltime=150:00:00,mem=5gb,nodes=1:ppn=1 -o logs/20200830_phylo500_run -e logs/20200830_phylo500_run -v INPUT_FILE=20200830_phylo500_run.csv signature_code/run_all_methods_phylo500.sh
+
+mkdir -p logs/20200916_phylo500_eval
+qsub -t 1-500%30 -N 20200916_phylo500_eval -q batch -d $PWD -l walltime=2:00:00,mem=10gb,nodes=1:ppn=1 -o logs/20200916_phylo500_eval -e logs/20200916_phylo500_eval -v INPUT_FILE=20200830_phylo500_run.csv signature_code/evaluate_phylo500.sh
+
+rm -f 20200916_simclone1000_run.csv
+j=1
+for file in data_simu_pcawg/testing_SimClone1000_input/*; do
+name=`echo $file |cut -d "/" -f 3`;
+echo $j,$name,$j >> 20200916_simclone1000_run.csv
+j=$((j+1)); 
+done
+mkdir -p logs/20200916_simclone1000_run
+qsub -t 1-971 -N 20200916_simclone1000_run -q batch -d $PWD -l walltime=150:00:00,mem=15gb,nodes=1:ppn=1 -o logs/20200916_simclone1000_run -e logs/20200916_simclone1000_run -v INPUT_FILE=20200916_simclone1000_run.csv signature_code/run_all_methods_simclone1000.sh
+
+rm -f 20201011_fix_eval.csv
+j=1
+for s in {1..500}; do
+echo $j,"PhylogicNDT500/Sim_500_${s}_cst" >> 20201011_fix_eval.csv
+j=$((j+1)); 
+echo $j,"PhylogicNDT500/Sim_500_${s}_var" >> 20201011_fix_eval.csv
+j=$((j+1)); 
+done
+for file in data_simu_pcawg/testing_SimClone1000_input/*; do
+name=`echo $file |cut -d "/" -f 3`;
+echo $j,SimClone1000/$name\_var >> 20201011_fix_eval.csv
+j=$((j+1)); 
+echo $j,SimClone1000/$name\_cst >> 20201011_fix_eval.csv
+j=$((j+1)); 
+done
+mkdir -p logs/20201011_fix_eval
+qsub -t 10-2942%55 -N 20201011_fix_eval -q batch -d $PWD -l walltime=1:00:00,mem=15gb,nodes=1:ppn=1 -o logs/20201011_fix_eval -e logs/20201011_fix_eval -v INPUT_FILE=20201011_fix_eval.csv signature_code/fix_evaluate.sh
+
+
+mkdir -p logs/2020420_big_run_pyclone_cst
+qsub -t 1-396%90 -N 2020420_big_run_pyclone_cst -q batch -d $PWD -l walltime=96:00:00,mem=5gb,nodes=1:ppn=1 -o logs/2020420_big_run_pyclone_cst -e logs/2020308_big_run_pyclone -v INPUT_FILE=2020308_big_run_pyclone.csv signature_code/run_pyclone.sh
+
+# evaluation on the dream dataset
+rm -f 20200415_dream_run.csv
+j=1
+for i in {2..6}; do
+for depth in {8,16,32,64,128}; do
+echo $j,"T${i},${depth}X" >> 20200415_dream_run.csv
+j=$((j+1)); 
+done
+done
+mkdir -p logs/20200415_dream_run
+qsub -t 1-25 -N 20200415_dream_run -q batch -d $PWD -l walltime=120:00:00,mem=10gb,nodes=1:ppn=1 -o logs/20200415_dream_run -e logs/20200415_dream_run -v INPUT_FILE=20200415_dream_run.csv signature_code/run_all_methods_dream.sh
+
+# 2942%55
+
 ############################################################
 ### step 3. Special evaluations of clonesig performances ###
 ############################################################

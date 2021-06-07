@@ -78,7 +78,6 @@ def plot_function_TCGA(loc, input_df, n_clusters):
     relevant_sigs = [c for i, c in enumerate(bla_protected.columns) if np.abs(bla_protected).sum(axis=0)[c]>0]
 
     relevant_sigs_clonal = [c for i, c in enumerate(bla_protected.columns) if input_df['clonal_{}'.format(c)].sum()>0]
-    print(len(relevant_sigs), len(relevant_sigs_clonal))
 
     sns.set_context('poster', font_scale=0.15*len(relevant_sigs)+0.3)
 
@@ -133,7 +132,7 @@ def plot_function_TCGA(loc, input_df, n_clusters):
         data_key = Patch(color=sex_colordict[key], label=key)
         patchList.append(data_key)
     patchList.append(Patch(color='#ababab', label='missing'))
-    
+
     my_own_order = ['<40', '40-50', '50-60', '60-70', '>70', 'nan', np.nan]
     age_order = {key: i for i, key in enumerate(my_own_order)}
     if 'age_group' in input_df.columns:
@@ -149,24 +148,24 @@ def plot_function_TCGA(loc, input_df, n_clusters):
             data_key = Patch(color=stage_global_colordict[key], label=key)
             patchList.append(data_key)
         patchList.append(Patch(color='#ababab', label='missing'))
-        
+
     if 'staging_pt' in input_df.columns:
         patchList.append(Patch(color='white', label='Tumor size:'))
         for key in sorted(list(set(bla_protected_s.staging_pt.unique()).intersection(set(stage_pt_colordict.keys())))):
             data_key = Patch(color=stage_pt_colordict[key], label=key)
             patchList.append(data_key)
         patchList.append(Patch(color='#ababab', label='missing'))
-        
+
     # patchList.append(Patch(color='white', label='Cluster:'))
     # for key in sorted(list(set(bla_protected_s.clust.unique()).intersection(set(kmeans_colordict.keys())))):
     #     data_key = Patch(color=kmeans_colordict[key], label=key)
     #     patchList.append(data_key)
     leg_list.append(g.ax_heatmap.legend(handles=patchList, loc=2, bbox_to_anchor=(1.4, 1), fontsize=2.7*len(relevant_sigs)))
     plt.savefig('{}/{}_heatmap.pdf'.format(output_path, loc), bbox_inches='tight')
-    
+
     final_figure_list = list()
     pval_list = list()
-    
+
     # if 'staging_pt' in input_df.columns:
     #     pivot_df = bla_protected_s.pivot_table(index='clust', columns='staging_pt', values='SBS1', aggfunc='count').fillna(0)
     #     chi2, p, dof, ex = chi2_contingency(pivot_df)
@@ -199,7 +198,6 @@ def plot_function_TCGA(loc, input_df, n_clusters):
     #     plt.savefig('20190801_paper_figures/{}_age.pdf'.format(loc), bbox_inches='tight')
     #     final_figure_list.append('age')
 
-        
     clonal_sigs = ['clonal_{}'.format(c) for c in relevant_sigs_clonal]
     subclonal_sigs = ['subclonal_{}'.format(c) for c in relevant_sigs_clonal]
 
@@ -217,7 +215,7 @@ def plot_function_TCGA(loc, input_df, n_clusters):
         sub_sigs = sub_sigs.assign(staging_pt = input_df.staging_pt)
     sub_sigs = pd.merge(sub_sigs, bla_protected[['patient_id', 'clust']])
     sub_sigs.sort_values('clust', inplace=True)
-    
+
     row_colors = list()
     leg_list = list()
     row_colors.append(sub_sigs.SEX.map(sex_colordict).fillna('#ababab'))
@@ -228,7 +226,7 @@ def plot_function_TCGA(loc, input_df, n_clusters):
     if 'staging_pt' in input_df.columns:
         row_colors.append(sub_sigs.staging_pt.map(stage_pt_colordict).fillna('#ababab'))
     #row_colors.append(bla_protected_s.clust.map(kmeans_colordict).fillna('#ababab'))
-        
+
     g=sns.clustermap(sub_sigs[clonal_sigs + subclonal_sigs].fillna(0), cmap="Greens", vmin=0, vmax=1,
                      yticklabels=False, row_colors=row_colors,
                     row_cluster=True, col_cluster=False, figsize=(4 * len(relevant_sigs_clonal), 2 * len(relevant_sigs_clonal)))
@@ -257,7 +255,7 @@ def plot_function_TCGA(loc, input_df, n_clusters):
     print(r'\begin{figure}')
     print(r'\centering')
     print(r'\includegraphics[height=0.4\textheight]{{{}/{}_heatmap.pdf}}'.format(output_path, loc))
-    cap_text = 'Panel a: Stratification of patients depending on their pattern of signature change for {} patients ({} patients, including {} with a significant signature change). The heatmap represents the difference between the signature activity in the largest subclone (in terms of number of mutations) and the clonal mutations (defined as belonging to the clone of highest CCF).'.format(loc, nb_patients, nb_patients_sig)
+    cap_text = '\\textbf{{Overview of CloneSig results for the TCGA sub-cohort {} (n={}).}} Panel a: Stratification of patients depending on their pattern of signature change for {} patients ({} patients, including {} with a significant signature change). The heatmap represents the difference between the signature activity in the largest subclone (in terms of number of mutations) and the clonal mutations (defined as belonging to the clone of highest CCF).'.format(loc, nb_patients, loc, nb_patients, nb_patients_sig)
     # for i, fig_name in enumerate(final_figure_list):
     #     print(r'\includegraphics[height=0.15\textheight]{{figures/{}_{}.pdf}}'.format(loc, fig_name))
     #     cap_text += text_dict[fig_name].format(letters[i+1], np.round(pval_list[i], 4))
@@ -266,15 +264,8 @@ def plot_function_TCGA(loc, input_df, n_clusters):
     cap_text += 'Panel {}: Stratification of patients depending on their complete pattern of signature exposure. The heatmap represents the signature activity in the largest subclone (in terms of number of mutations) and the clonal mutations (defined as belonging to the clone of highest CCF).'.format(letters[len(final_figure_list)+1], loc, nb_patients, nb_patients_sig)
     print('\caption{{{}}}'.format(cap_text))
     print('\label{{{}}}'.format(loc.lower()))
-    print(print('\end{figure}\n'))
-    
-    
+    print('\end{figure}\n')
 
-#\caption{Stratification of patients depending on their pattern of signature change for UVM patients (80 patients, including 3 with a significant signature change). The heatmap represents the difference between the signature activity in the largest subclone (in terms of number of mutations) and the clonal mutations (defined as belonging to the clone of highest CCF). The two lower panels represent the repartition of tumor size classes (left, Chi-square test of independence p=0.55), and clinical tumor stage (right, Chi-square test of independence p=0.58) in the different clusters.}
-
-
-
-# In[32]:
 
 
 clonesig_res_acc = clonesig_res[clonesig_res.cancer_loc_x=='ACC'].reset_index()
@@ -287,7 +278,6 @@ sub_protected_chg = clonesig_res_acc[(clonesig_res_acc.mutation_set=='protected'
 sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', left_on='patient_id', right_on='PATIENT_ID')
 
 
-# In[33]:
 
 
 sns.set_style('white')
@@ -296,14 +286,8 @@ plot_function_TCGA('ACC', sub_protected_chg, 2)
 
 
 
-# ### BLCA
-
-# In[209]:
-
-
 clonesig_res_blca = clonesig_res[clonesig_res.cancer_loc_x=='BLCA'].reset_index()
 clinical_data = pd.read_csv('data_tcga_wes/BLCA/clinical/data_bcr_clinical_data_patient.txt', sep='\t', skiprows=4)
-#clinical_data = clinical_data.assign(staging_pt=clinical_data.AJCC_TUMOR_PATHOLOGIC_PT.str[:2])
 
 clinical_data = clinical_data.assign(age_group=pd.cut(clinical_data.AGE, bins=[0, 39, 49, 59, 69, 150], labels=['<40', '40-50', '50-60', '60-70', '>70']))
 clinical_data = clinical_data.assign(staging_global=clinical_data.AJCC_PATHOLOGIC_TUMOR_STAGE.str.replace('A', '').str.replace('Stage ', '').str.replace('B', '').str.replace('C', ''))
@@ -1004,7 +988,7 @@ sub_protected_chg_m = pd.merge(sub_protected_chg, clinical_data, how='left', lef
 
 plot_function_TCGA('UVM', sub_protected_chg, 1)
 
-clonesig_res.pivot_table(index='cancer_loc_x', columns='mutation_set', values='nb_mut', agg_func='mean')
+clonesig_res.pivot_table(index='cancer_loc_x', columns='mutation_set', values='nb_mut', aggfunc='mean')
 clonesig_res.groupby('cancer_loc_x').agg({'a':['sum', 'max'], 
                          'b':'mean', 
                          'c':'sum', 
