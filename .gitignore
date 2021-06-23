@@ -107,7 +107,6 @@ venv.bak/
 *.csv
 !result_tables/*.csv
 results/
-*simulation*
 .DS_Store
 data
 20200515_paper_figures
