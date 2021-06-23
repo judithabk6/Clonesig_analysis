@@ -1,5 +1,6 @@
 # Clonesig_analysis
-This repository contains all the scripts used to provide the results for Clonesig publication.
+This repository contains all the scripts used to provide the results for the CloneSig article.
+Abécassis, Judith, Fabien Reyal, and Jean-Philippe Vert. "CloneSig: Joint inference of intra-tumor heterogeneity and signature deconvolution in tumor bulk sequencing data." BioRxiv (2019): [825778](https://www.biorxiv.org/content/10.1101/825778v2).
 
 
 The folder ```signature_code``` contains most of the code, with the master script in the bash script ```run_all.sh```. It is not advised to execute it all at once, considering the run time, and the paths to change (python virtual environments, paths to executables etc).
