@@ -24,14 +24,14 @@ cancer_loc = sys.argv[1]
 
 
 # load ascat purity
-all_ascat_purity = pd.read_csv('data_tcga_wes/pancancer/liftover_ASCAT_TCGA/filtered.combined.acf.ploidy.txt', sep='\t')
+all_ascat_purity = pd.read_csv('external_data/liftover_ASCAT_TCGA/filtered.combined.acf.ploidy.txt', sep='\t')
 all_ascat_purity_relevant = all_ascat_purity[all_ascat_purity.cancer_type==cancer_loc]
 all_ascat_purity_samples = [s[:16] for s in all_ascat_purity_relevant.barcodeTumour.unique()]
 all_ascat_purity_patients = [s[:12] for s in all_ascat_purity_samples]
 
 
 # load CNV data
-all_cnv_hg38 = pd.read_csv('data_tcga_wes/pancancer/liftover_ASCAT_TCGA/cnasHg38.tsv',
+all_cnv_hg38 = pd.read_csv('external_data/liftover_ASCAT_TCGA/cnasHg38.tsv',
                            sep='\t')
 all_cnv_hg38 = all_cnv_hg38.assign(patient_id=all_cnv_hg38.participant.str[:12])
 all_cnv_hg38 = all_cnv_hg38.assign(weight=all_cnv_hg38.stop-all_cnv_hg38.start)
