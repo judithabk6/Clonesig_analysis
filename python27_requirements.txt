@@ -1,5 +1,5 @@
 matplotlib==2.0.2
-numpy==1.15.3
+numpy==1.22.0
 pandas==0.24.2
 PyClone==0.13.1
 PyDP==0.2.4

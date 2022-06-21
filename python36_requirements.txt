@@ -4,7 +4,7 @@ Cython==0.29.13
 kiwisolver==1.0.1
 lifelines==0.22.3
 matplotlib==3.0.2
-numpy==1.16.4
+numpy==1.22.0
 pandas==0.24.2
 scikit-learn==0.20.3
 scipy==1.1.0
